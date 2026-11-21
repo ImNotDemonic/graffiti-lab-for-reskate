@@ -1,7 +1,7 @@
 {
   "name": "GraffitiLab",
   "version_number": "0.6.7",
-  "website_url": "",
+  "website_url": "https://github.com/ImNotDemonic/graffiti-lab-for-reskate",
   "description": "Share premade wall graffiti in ReSkate sessions. Paint freehand and create, save and place Blackbook drawings offline.",
   "dependencies": []
 }
