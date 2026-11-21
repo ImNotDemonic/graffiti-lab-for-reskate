@@ -12,7 +12,9 @@ The Premade Art selector shows a thumbnail and larger preview of each design. Pi
 
 The **Custom Editor** has a transparent 2:1 canvas, a freehand marker, straight lines, 16 colours, adjustable brush width and stroke undo/redo. **Blackbook** is the personal gallery for named, editable drawings. The saved piece **ridge line** survived a restart and edit, then passed preview, placement and removal on both test maps. [Editor playtest](docs/MILESTONE_3.md) · [Wall playtest](docs/MILESTONE_4.md)
 
-**Wall Paint** lets you draw directly where the cursor meets a suitable wall. Freehand strokes passed in-game tests on the Blue Light Beach kiosk and a Turbo Token Arcade interior wall. Each stroke stays until removed, expired or cleared on level change. Multiplayer sharing remains planned. [Wall Paint playtest](docs/MILESTONE_5.md)
+**Wall Paint** lets you draw directly where the cursor meets a suitable wall. Freehand strokes passed in-game tests on the Blue Light Beach kiosk and a Turbo Token Arcade interior wall. A held stroke and the number of strokes have no fixed count limit. The brush records each accepted sample even when ReSkate runs out of live decals. At capacity, the latest ink under the brush and ink near the camera get display priority. Returning to an area can bring its paint back into view. Wall Paint saves automatically on this PC. Returning to the same map offline restores your strokes, including after a game restart. Click **Eraser** and drag across the part you want to remove. Click **Paint** to resume, or use Ctrl+Z in Paint mode to remove the most recent stroke. [Wall Paint playtest](docs/MILESTONE_5.md)
+
+**Premade sharing** is available for playtesting in 0.6.0. Install and approve the same build under `Mods/GraffitiLab/` on each player's PC. Start a multiplayer session, choose a premade and confirm it with Ctrl+P. While the artist remains in the world, late joiners receive the current placements. Ctrl+R removes the artist's newest placement. A host-side in-game test and a two-process Luau test passed. The visual check on a second signed-in game client is still open. [Multiplayer test record](docs/MILESTONE_6.md)
 
 ## Development setup
 
@@ -20,9 +22,11 @@ The plugin uses sandboxed **Luau** and ReSkate's `reskate.*` API. The tested bui
 
 1. For a fresh ReSkate setup, use the official launcher and a separate ReSkate folder. Let the launcher install its supported copy of `skate.` and start the game with **Play**. Keep the development checkout separate from the installed game. [ReSkate setup](https://docs.reskate.dev/quickstart)
 2. To check an existing plugin installation, open the ReSkate console and run `plugin list`. The in-game **Insert → Plugins** menu manages approvals. [Plugin management](https://docs.reskate.dev/plugins/overview)
-3. With the game closed, extract the prototype ZIP into `Mods/GraffitiLab/` beside the managed `Skate.exe`. The mod root should contain `layout.toc`, `Win32/`, `reskate-plugin.json` and `plugin/`. Start offline, approve Graffiti Lab and enter normal skating. [Plugin manifest](https://docs.reskate.dev/plugins/manifest)
+3. With the game closed, extract the prototype ZIP into `Mods/GraffitiLab/` beside the managed `Skate.exe`. The mod root should contain `layout.toc`, `Win32/`, `reskate-plugin.json` and `plugin/`. Start ReSkate and approve Graffiti Lab. Sign in through Steam to test multiplayer. Offline play supports the editor, Blackbook, Wall Paint and premades. [Plugin manifest](https://docs.reskate.dev/plugins/manifest)
 
 ## Controls
+
+Open **Insert → Plugins → Graffiti Lab → Open Graffiti Lab**, then press **Insert** again to close the menu. The Graffiti Lab main menu opens over the current map. **Ctrl+L** or **Back + Y** opens it directly. Choose **Premade Art**, **Custom Editor**, **Wall Painting**, **Saved Gallery** or **Settings**. Click a row, or use Up / Down and Enter (D-pad and A on a controller). Esc or B returns from a destination opened through the main menu.
 
 | Key | Action |
 | --- | --- |
@@ -30,19 +34,20 @@ The plugin uses sandboxed **Luau** and ReSkate's `reskate.*` API. The tested bui
 | Ctrl+S | Save the current drawing to Blackbook. **Rename drawing** changes its title. A later save updates the same entry. |
 | Ctrl+B | Open Blackbook. Click a thumbnail to edit, **Place on wall** below it to preview, or **New drawing** for a blank canvas. |
 | Ctrl+Z / Ctrl+Y | Undo or redo a stroke in the editor. Esc closes the screen and keeps the current draft for this session. |
-| Ctrl+L | Open Premade Art. Click a thumbnail or use Left / Right to browse. Click **Place on Wall** or press Enter to aim with that design. Esc closes the selector. |
+| Ctrl+L | Open the main menu. In **Premade Art**, search or filter the three pieces, select a thumbnail and choose **Place on Wall** or press Enter to aim. |
 | Ctrl+G | Enter or cancel aim mode using the current design. A translucent preview appears on a suitable wall within eight metres. |
-| Ctrl+P | Confirm the preview. The mark stays fixed as you move or select another design. |
+| Left click / Ctrl+P / controller A | With the library closed, centre the aiming ring on a flat wall within 8 m. When **Wall ready** appears, confirm to place the artwork. Ctrl+R or controller B cancels aiming. |
 | Ctrl+R | Cancel an active preview. When idle, remove the newest confirmed mark. |
 | Ctrl+I | Open Wall Paint. Hold the left mouse button and move to draw, or tap Space to toggle paint flow. |
+| E | Switch between Paint and Eraser. Drag the eraser over unwanted ink. Use [ / ] for a smaller or larger eraser. Erased sections are saved automatically. |
 | 1–8, [ / ] | With the brush up, choose a paint colour or change the width (25, 40 or 65 mm). |
 | Ctrl+Z, Esc | In Wall Paint, undo the last freehand stroke or close the brush. Closing leaves the paint on the wall. |
 
-The local limit is 16 confirmed marks and one preview. Marks clear when leaving the level and expire just before ReSkate's ten-minute limit. The console accepts `graffiti library`, `graffiti aim`, `graffiti place`, `graffiti remove` and `graffiti status`. The actions can be reassigned in ReSkate's binds. A controller binding opens the library with Back + Y, then D-pad Left / Right browses, A chooses and B closes.
+The local artwork limit is 16 premade or Blackbook placements and one preview. Freehand strokes have a separate display pool. Premade and Blackbook wall placements clear on level change and expire just before ten minutes. Freehand paint has its own map files under `Mods/.reskate_plugin_data/GraffitiLab/wall-paint/`. Back up this folder to keep a copy of your painted maps. The console accepts `graffiti library`, `graffiti aim`, `graffiti place`, `graffiti remove` and `graffiti status`. The actions can be reassigned in ReSkate's binds. The Settings screen shows the default controls, lets you change the can colour and width for this session, and displays local mark and decal counts.
 
-The editor and Blackbook use mouse and keyboard. They are also reachable from the bottom of Premade Art or with `graffiti editor` and `graffiti blackbook`. Use **Save to Blackbook** before quitting. Each drawing is a versioned JSON file under `Mods/.reskate_plugin_data/GraffitiLab/`, separate from the installed mod. The editor allows up to 96 strokes and 448 sampled points per drawing.
+The editor and Blackbook use mouse and keyboard. The editor’s Eraser removes a clicked stroke, and Picker samples its colour. The Saved Gallery’s **On this map** tab lists your current local marks. They are also reachable from the main menu or with `graffiti editor` and `graffiti blackbook`. Use **Save to Blackbook** before quitting. Each drawing is a versioned JSON file under `Mods/.reskate_plugin_data/GraffitiLab/`, separate from the installed mod. The editor allows up to 96 strokes and 448 sampled points per drawing.
 
-For a saved drawing, aim at a continuous flat wall with room for a 1 × 0.5 m canvas. Ctrl+P confirms the preview. Ctrl+R cancels it or removes the most recent placement while idle. The saved strokes stay in Blackbook. Wall copies start at 128 × 64 pixels and step down in resolution for more complex artwork. The mod allows 256 decal rectangles per drawing and 768 live decals across its placements and preview.
+For a saved drawing, aim at a continuous flat wall with room for a 1 × 0.5 m canvas. Ctrl+P confirms the preview. Ctrl+R cancels it or removes the most recent placement while idle. The saved strokes stay in Blackbook. Wall copies start at 128 × 64 pixels and step down in resolution for more complex artwork. The mod allows 256 decal rectangles per drawing and 768 live artwork decals across its placements and preview.
 
 ## Build the test ZIP
 
@@ -53,7 +58,7 @@ python tools/build_author.py --sdk "C:/dev/ReSkate" --llvm "C:/dev/llvm-mingw"
 python tools/package_mod.py --game "C:/Games/ReSkate" --studio "C:/Tools/ReSkate Studio/reskate_cli.exe"
 ```
 
-The author reads the supported game data and the 512 × 512 RGBA PNGs in `art/catalogue.json`. The builder also generates 16 solid decal textures from `art/palette.json`. Preserve catalogue slots and palette order to keep asset identities and saved colours stable. Both shader lookup tables include all 19 materials. Studio compiles them into `outputs/GraffitiLab-0.5.0.zip`. The GPL offline tools derive from the gBGYo decal recipe and link ReSkate's resource readers. Their source and licence are under `tools/`. [Upstream decal author](https://github.com/gBGYo/ReSkate_blood) · [LLVM-MinGW release](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261117)
+The author reads the supported game data and the 512 × 512 RGBA PNGs in `art/catalogue.json`. The builder also generates 16 solid decal textures from `art/palette.json`. Preserve catalogue slots and palette order to keep asset identities and saved colours stable. Both shader lookup tables include all 19 materials. Studio compiles them into `outputs/GraffitiLab-0.6.5.zip`. The GPL offline tools derive from the gBGYo decal recipe and link ReSkate's resource readers. Their source and licence are under `tools/`. [Upstream decal author](https://github.com/gBGYo/ReSkate_blood) · [LLVM-MinGW release](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261117)
 
 ## Project documents
 

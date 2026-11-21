@@ -77,25 +77,33 @@ def build(game, studio, author, destination):
             for path in sorted([*payload, patch / ".reskate-studio-patch", patch / "layout.toc"]):
                 archive.write(path, path.relative_to(patch))
             for path in ("manifest.json", "reskate-plugin.json", "plugin/main.lua", "plugin/surface.lua",
-                         "plugin/selector.lua", "plugin/blackbook.lua", "plugin/studio.lua",
-                         "plugin/wall_art.lua", "plugin/paint.lua", "art/palette.json", "art/checker.png", "art/catalogue.json"):
+                         "plugin/dock.lua", "plugin/menu.lua", "art/menu-type.png", "plugin/selector.lua", "plugin/blackbook.lua", "plugin/studio.lua",
+                         "plugin/wall_art.lua", "plugin/wall_store.lua", "plugin/wall_ink.lua", "plugin/paint.lua", "plugin/sharing.lua",
+                         "art/palette.json", "art/checker.png", "art/catalogue.json"):
                 archive.write(ROOT / path, path)
             for piece in catalogue:
                 path = f"art/{piece['id']}.png"
                 archive.write(ROOT / path, path)
             archive.writestr("README.md", "# Graffiti Lab " + manifest["version_number"] + "\n\n"
-                             "Offline premade graffiti for ReSkate 20261116. With the game closed, extract into "
-                             "Mods/GraffitiLab beside Skate.exe, then launch offline and approve the plugin.\n\n"
-                             "Press Ctrl+L to open Premade Art. Click a tile or use Left/Right, then choose Place on Wall "
-                             "or press Enter to aim. Ctrl+P confirms. Ctrl+G toggles aiming. Ctrl+R cancels a "
-                             "preview or removes the last mark. Esc closes the selector.\n\n"
+                             "Premade graffiti for ReSkate 20261116. With the game closed, extract into "
+                             "Mods/GraffitiLab beside Skate.exe, then launch and approve the plugin. For multiplayer, "
+                             "each player needs this version under the same mod folder name. While in the same session and map, "
+                             "confirmed premade marks are shared, including with late joiners while the artist remains online. "
+                             "Custom artwork and freehand painting are available offline.\n\n"
+                             "Open Insert > Plugins > Graffiti Lab > Open Graffiti Lab, then press Insert again. "
+                             "Ctrl+L opens the Graffiti Lab main menu. Select Premade Art, then click a tile or use Left/Right, then choose Place on Wall "
+                             "or press Enter to aim. Centre the ring on a flat wall within 8 m. When Wall ready appears, "
+                             "left-click, press Ctrl+P or tap A to place. Ctrl+G toggles aiming. Ctrl+R cancels a "
+                             "preview or removes the last mark. Esc returns to the main menu.\n\n"
                              "Ctrl+E opens the drawing editor. Drag on the canvas, choose a colour and size, or rename "
                              "the drawing. Ctrl+S saves to Blackbook. Ctrl+B opens the gallery. Click a saved piece "
                              "to edit it, or choose Place on wall below its thumbnail. Aim at a suitable wall, press "
                              "Ctrl+P to confirm and Ctrl+R to remove. Your Blackbook file stays available.\n\n"
                              "Ctrl+I opens Wall Paint. Hold the left mouse button and move over a wall, or press Space "
                              "to toggle continuous flow. Use 1-8 for colour, [ and ] for width, Ctrl+Z to undo a stroke "
-                             "and Esc to put the brush away. Wall paint lasts for the current session.\n")
+                             "and Esc to put the brush away. Keep drawing across the wall with no stroke or stamp count limit. "
+                             "Wall Paint saves automatically for each map. Select Eraser or press E and drag to erase ink. "
+                             "When the renderer fills, the brush prioritises nearby and recent ink.\n")
             archive.write(scratch / "icon.png", "icon.png")
         with ZipFile(scratch / "GraffitiLab.zip") as archive:
             if archive.testzip():
