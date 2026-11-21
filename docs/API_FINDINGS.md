@@ -1,6 +1,6 @@
 # ReSkate API findings
 
-Baseline checked on 21 November 2026. **Local evidence** means a file or installed example was inspected. **Documented** means the upstream project describes the capability. The Graffiti Lab prototype has not exercised any of these calls in game.
+Baseline checked on 21 November 2026. **Local evidence** comes from inspected files, installed examples and the live offline playtest. **Documented** means the upstream project describes the capability. [Milestone 1 test record](MILESTONE_1.md)
 
 ## Local evidence
 
@@ -22,13 +22,16 @@ Baseline checked on 21 November 2026. **Local evidence** means a file or install
 
 ## Known limits
 
+- On the tested build, the projected decal displayed the original image, alpha and orientation on two solid receivers. A Blue Light Beach grille passed the footprint probes but only its visible bars received paint. Geometry that looks perforated can have a solid collision shape.
+- A fixed wall can return an object from `world.pick`. The arcade wall identified itself as a map-owned baked structural collision mesh. After revisiting San Vansterdam, the kiosk identified itself as part of a fixed Downtown plot. The pinned binding supplies optional blueprint and transform data. The prototype recognises these cases and still checks the footprint. Compatibility with other named receivers requires further evidence. [Pinned pick implementation](https://github.com/Dingo-Shenanigans/ReSkate/blob/8e4aefca153ce9cb622074ae4de05f81fa71d09c/Extension/Plugins/plugin_api_world.cpp#L692-L730) · [Observed identifiers](MILESTONE_1.md)
+
 - Collision is streamed near the skater. World queries allow up to 64 rays per tick and a 1,000 m segment. A clear ray far from the skater gives no assurance about unloaded geometry. [World queries](https://docs.reskate.dev/plugins/api/world)
 - A plugin may hold up to 2,048 decals, with 4,096 shared globally. A handle lasts at most ten minutes. Loading, replay, Noclip and park editor transitions may release effects earlier. Use one handle for the prototype and measure stamps per drawing later. [Effect lifetime and limits](https://docs.reskate.dev/plugins/api/effects)
 - ReSkate enforces plugin time and memory budgets. Its release notes specify 128 MB of plugin memory on this build. Verify frame cost and mark count on both test maps. [Runtime limits](https://docs.reskate.dev/plugins/limits) · [Build notes](https://github.com/Dingo-Shenanigans/ReSkate/releases/tag/20261116)
 
 ## Unresolved questions and how to test them
 
-1. **Can our build reproduce one original decal?** The gBGYo Blood project publishes an offline asset author, build instructions and a merge verifier. Select the minimum compatible tool versions, build an asymmetric graphic, then check orientation, alpha and removal on a stock wall. [Example toolchain](https://github.com/gBGYo/ReSkate_blood)
-2. **Which receivers are reliable?** A probe hit alone cannot establish whether the visible material accepts decals. Test opaque walls, corners, thin partitions, rails and missing collision on a stock and a custom map. Record results by full level name.
+1. **How does the decal behave behind other geometry?** The core playtest confirmed orientation, alpha, lateral camera movement and removal. Occlusion by a separate foreground object and projection through thin partitions still need a dedicated test. [Playtest record](MILESTONE_1.md)
+2. **Which other receivers are reliable?** Test corners, rails, additional materials and missing collision on a stock and a custom map. Record results by full level name and compare visible geometry with collision.
 3. **How can a drawing become world artwork?** No reviewed API documents uploading arbitrary pixel data as a world decal or assigning a new texture to an arbitrary world material at runtime. Test a bounded set of brush stamps for in-game drawings, and offline compilation for exact images. [Decal creation contract](https://docs.reskate.dev/plugins/api/effects)
 4. **What counts as a shared piece?** Test a matching art pack, a missing artwork ID and a late joiner. Determine whether sharing custom pieces also requires distributing stroke records or image data. [Session transport](https://docs.reskate.dev/plugins/api/session)

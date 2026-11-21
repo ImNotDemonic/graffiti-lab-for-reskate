@@ -1,6 +1,6 @@
 # Graffiti Lab project specification
 
-Graffiti Lab is in the planning stage. The runtime and example plugins have been inspected. Graffiti Lab has yet to run in game. See [API findings](API_FINDINGS.md) for the evidence behind the design.
+The offline prototype passed its core placement test on a wall in each target map. The table below also records acceptance criteria for broader surface and lifecycle testing. [Build and playtest record](MILESTONE_1.md) · [API findings](API_FINDINGS.md)
 
 ## Intended player workflow
 
@@ -11,7 +11,7 @@ Graffiti Lab is in the planning stage. The runtime and example plugins have been
 
 ## Milestone 1 — place and remove one image
 
-Use one original, asymmetric graphic with a transparent border, one temporary placement and one flat, static wall in offline play. Asymmetry makes flipped and mirrored projection easy to spot. The proposed client needs `camera`, `world.raycast`, `effects` and `input` for this test.
+Use one original, asymmetric graphic with a transparent border, one temporary placement and one flat, static wall in offline play. Asymmetry makes flipped and mirrored projection easy to spot. The client uses `camera`, `world.raycast`, `effects` and `input` for placement, `session.read` for the offline guard and `console` for commands and status.
 
 | Step | Proposed behaviour | Pass condition |
 | --- | --- | --- |
@@ -34,6 +34,6 @@ Run the full sequence on **San Vansterdam** and **Turbo Token Arcade**, an insta
 
 Persistent world placements are a separate decision from a persistent artwork library. Milestone 1 uses session-only placements.
 
-## Proposed runtime structure
+## Runtime structure
 
-Keep the first implementation small. A client entry under `plugin/` can own input, map events and the Idle → Aiming → Placed interaction. A surface module can return a candidate transform or a rejection reason. A placement module can own the current decal handle, opacity and cleanup. Preserve original artwork, its recipe and required package inputs in version control. Add editor, library and networking modules only when their milestones begin.
+`plugin/main.lua` owns the Idle → Aiming → Placed interaction, the single decal handle, input and cleanup. `plugin/surface.lua` checks nearby collision and returns a projection transform for a suitable wall. `art/` contains the original image. `tools/` builds its textures and decal resources offline and packages the compiled patch with the Luau plugin. Editor, library and networking modules belong to later milestones.

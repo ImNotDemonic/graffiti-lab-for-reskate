@@ -1,0 +1,15 @@
+{
+  "api": 1,
+  "side": "client",
+  "entry": "plugin/main.lua",
+  "permissions": ["camera", "world.raycast", "effects", "input", "session.read", "console"],
+  "effects": ["world/materials/decal/reskate_graffitilab/switchback_dv"],
+  "resident": [{
+    "bundle": "win32/levels/game/dingolevel_root/dingolevel_root",
+    "roots": ["world/materials/decal/reskate_graffitilab/"],
+    "shaders": [{
+      "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_switchback",
+      "roots": ["world/materials/decal/reskate_graffitilab/switchback_dv"]
+    }]
+  }]
+}
