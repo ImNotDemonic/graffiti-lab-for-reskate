@@ -14,13 +14,21 @@ end
 
 function imports.list()
     local entries,why=reskate.files.list(folder)
-    if not entries then return {},why end
+    entries=entries or {}
     local designs={}
     for _,file in entries do
         local name=file:match("^([%w _%-]+)%.graffiti$")
         if name and #name<=64 then
             table.insert(designs,{id="import/"..file,name=name,category="My imports",
                 file=folder.."/"..file,aspect=1,colourway="Local artwork"})
+        end
+    end
+    local shared=reskate.files.list("gallery/downloads")
+    for _,file in shared or {} do
+        local title,id=file:match("^([%w _%-]+)~([0-9a-f%-]+)%.json$")
+        if title and #title<=64 and #id==36 then
+            table.insert(designs,{id="gallery/"..id,name=title,category="My imports",downloaded=true,
+                file="gallery/downloads/"..file,aspect=1,colourway="Public Artworks"})
         end
     end
     return designs
@@ -45,11 +53,20 @@ local function decode(raw)
     if #parts>0 then return parts,aspect end
 end
 
+imports.decode=decode
+
 function imports.load(piece)
     if piece.parts then return true end
     if piece.problem then return false end
     local raw,why=reskate.files.read(piece.file)
     local parts,aspect
+    if raw and piece.downloaded then
+        local ok,copy=pcall(reskate.json.decode,raw)
+        if ok and type(copy)=="table" and copy.version==1 and copy.id==piece.id:sub(9)
+            and type(copy.frame)=="string" then
+            raw=copy.frame
+        else raw=nil why="Damaged downloaded artwork" end
+    end
     if raw then parts,aspect=decode(raw) end
     if not parts then
         piece.problem=why or "Invalid artwork. Export the image again, then refresh."

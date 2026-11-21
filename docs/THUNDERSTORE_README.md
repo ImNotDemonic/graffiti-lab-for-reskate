@@ -2,6 +2,12 @@
 
 Put one of 46 premade pieces on a wall, draw a design in your Blackbook, or paint directly on the map. Open Graffiti Lab with **Ctrl+L** or **Back + Y**.
 
+## Public Artworks in 0.7.0
+
+Open **Graffiti Lab → Public Artworks**. Browse and preview work from other sessions. Download a static piece, then find it in **Premade Art → My imports**. It stays on this PC when the game restarts. Publisher and downloader can use separate gallery profiles without joining the same skate session.
+
+To publish, choose a creator profile on the **Account** tab. Choose your import or saved Blackbook drawing on **Publish**, preview it, give it a title and confirm. Blackbook shares a flattened ink copy. Keep your editable original in Blackbook. Guests can browse and download. Creator keys belong in the private folder opened by **Account → Open creator key folder**. The plugin asks for HTTPS access to the gallery when you turn on this update.
+
 ## What's new in 0.6.12
 
 This update includes the following changes since 0.6.7.

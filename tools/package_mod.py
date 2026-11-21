@@ -162,7 +162,7 @@ def build(game, studio, author, destination, native_from=None):
                          "plugin/dock.lua", "plugin/menu.lua", "art/menu-type.png", "plugin/selector.lua", "plugin/blackbook.lua", "plugin/studio.lua",
                          "plugin/wall_art.lua", "plugin/wall_store.lua", "plugin/wall_ink.lua", "plugin/paint.lua", "plugin/sharing.lua",
                          "plugin/spray_arm.lua", "plugin/spray_fx.lua", "art/spray-loop.wav", "art/spray-burst.wav",
-                         "plugin/imports.lua",
+                         "plugin/imports.lua", "plugin/gallery.lua", "plugin/gallery_screen.lua",
                          "art/palette.json", "art/checker.png", "LICENSE", "art/NOTICE.md"):
                 archive.write(ROOT / path, path)
             archive.write(scratch / "catalogue.json", "art/catalogue.json")

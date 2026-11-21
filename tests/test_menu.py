@@ -8,6 +8,7 @@ import sys
 from test_sharing import ADAPTER, ROOT
 
 HOST = """
+local screenCount=0
 local active, nativePage, typed, lastToast, actionClick
 local actions,keys,buttons,labels={}, {},{},{}
 local cursor={position=v(0,0,0),left=false}
@@ -21,7 +22,10 @@ reskate.package.read_json=function(path)
     return testCatalogue
 end
 reskate.ui={
-    screen=function(name) assert(not actions[name]) actions[name]=true end,
+    screen=function(name)
+        assert(screenCount<4,"ReSkate supports four screens per plugin")
+        assert(not actions[name]) actions[name]=true screenCount+=1
+    end,
     open=function(name) assert(actions[name]) active=name end,
     close=function() active=nil end,
     toast=function(t) lastToast=t end,
@@ -63,7 +67,7 @@ click(370,947) assert(#saved==0,"eraser did not remove the clicked stroke")
 click(90,947) click(370,947) assert(#saved==1 and saved[1].colour==3,"undo erase lost the stroke")
 click(221,947) click(370,947) assert(#saved==0,"redo erase failed")
 escape() assert(active=="Graffiti Lab")
-click(180,650) assert(active=="Wall Paint")
+click(180,650) assert(active=="Graffiti Lab Studio")
 assert(has("40 mm") and has("PAINT SIZE"))
 click(104,488) assert(has("65 mm"))
 key("E") assert(has("ERASE SIZE") and has("160 mm"))
@@ -82,6 +86,7 @@ click(452,185) assert(has("Artwork decals") and has("Visible paint / recorded"))
 escape() assert(active=="Graffiti Lab" and has("Acid · 65 mm"))
 escape() assert(active==nil)
 emit("action","Open Graffiti Lab on pad") step()
+buttons.down=true step() buttons.down=false step() -- Public Artworks follows Settings.
 buttons.down=true step() buttons.down=false step()
 buttons.a=true step() buttons.a=false step()
 assert(active=="Premade Art","controller failed to open the first row after wrap")
@@ -141,7 +146,7 @@ def run(luau, checks, name="menu", capture=False, catalogue=None):
         rows.append("{" + ",".join(fields) + "}")
     with TemporaryDirectory() as directory:
         code = [ADAPTER, "local testCatalogue={" + ",\n".join(rows) + "}", HOST]
-        for module in ("dock", "surface", "sharing", "wall_store", "wall_ink", "blackbook", "wall_art", "paint", "studio", "imports", "selector", "menu", "spray_fx", "spray_arm"):
+        for module in ("dock", "surface", "sharing", "wall_store", "wall_ink", "blackbook", "wall_art", "paint", "studio", "imports", "gallery", "gallery_screen", "selector", "menu", "spray_fx", "spray_arm"):
             source = (ROOT / "plugin" / (module + ".lua")).read_text(encoding="utf-8")
             code.append(f"modules.{module}=(function()\n{source}\nend)()")
         code.extend([(ROOT / "plugin/main.lua").read_text(encoding="utf-8"), checks])

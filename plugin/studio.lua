@@ -1,11 +1,11 @@
 local dock = require("dock")
 local book = require("blackbook")
-local title = "Graffiti Lab Studio"
 local ink, muted, blaze, panel = "#F2EFE9", "#B5B2AC", "#FF5A1F", "#0D0E10F5"
 local canvas = {672, 252, 1152, 576}
 local perPage = 4
 
 return function(onPlace,onBack,mapMarks)
+    local title=dock.editingScreen()
     local mode, doc, file, original = nil, book.new(), nil, nil
     local dirty, rename, pending = false, nil, nil
     local colour, width, redo, stroke = 3, 28, {}, nil
@@ -120,7 +120,6 @@ return function(onPlace,onBack,mapMarks)
         held={mouse=true,padBack=true}
         if native then reskate.ui.open(title) end
     end
-    reskate.ui.screen(title, function() end, {panel = false})
     reskate.on("screen_closed", function(name)
         if name == title and mode then stroke,lineStart=nil,nil back(true) end
     end)

@@ -9,3 +9,7 @@ The [specification](PROJECT_SPEC.md) defines the pass conditions. Update [API fi
 5. [x] **Preview, place and remove a saved drawing on both maps.** Blackbook kept the original seven strokes. A separate premade mark survived removal of the custom work. [Coverage, fidelity and timing](MILESTONE_4.md)
 6. [x] **Draw directly on a wall in each test map.** Freehand waves stayed on the San Vansterdam kiosk and an arcade wall after closing the brush. Both were removed, and neighbouring kiosk artwork survived. [Wall Paint test record](MILESTONE_5.md)
 7. [ ] **Verify premade sharing on a second signed-in ReSkate client.** The prototype, host placement and automated late-join checks are complete. On a separate client, confirm the pre-existing decal appears and disappears when its artist removes it. [Multiplayer test record](MILESTONE_6.md)
+8. [x] **Publish and download through the live public gallery.** Two separate gallery accounts completed the exchange on one ReSkate installation in San Vansterdam. The visitor's saved ink and creator credit matched the published piece. [Live test](../service/gallery/README.md#live-graffiti-lab-test)
+9. [ ] **Verify reuse on an independent installation.** Download the test piece on a second PC. Restart that client without gallery access and place the downloaded copy from My imports.
+
+The [extension plan and feature status](EXTENSION.md) tracks save compatibility, library and placement editing, creative tools, paint capacity, media and the cross-session gallery.

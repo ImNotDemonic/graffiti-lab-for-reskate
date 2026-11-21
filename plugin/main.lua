@@ -34,7 +34,7 @@ end)
 local unloadingMap
 local lifetime, capacity = 590000, 16
 local elapsed, sinceSample, epoch, assetError = 0, 0, nil, nil
-local selector, studio, paint, menu
+local selector, studio, paint, menu, publicGallery
 local fromHome, pendingHome = false, false
 local function backToHome()
     pendingHome=fromHome
@@ -79,6 +79,7 @@ local function stopAiming()
 end
 
 local function reset()
+    if publicGallery then publicGallery.close() end
     arm.reset()
     openAfterMenu, fromHome, pendingHome = false,false,false
     menu.close()
@@ -107,6 +108,7 @@ end
 -- On build 20261116 the host has a lobby world before its first peer handshakes.
 -- Keep its confirmed premades across that edge. Discard private art and other worlds.
 local function changeConnection(world, map)
+    if publicGallery then publicGallery.close() end
     arm.reset()
     fromHome,pendingHome=false,false
     menu.close()
@@ -359,15 +361,21 @@ local function openLibrary()
     selector.open(selected)
     reskate.log("Opened Premade Art")
 end
+local function openPublic()
+    menu.close() selector.close() studio.close() paint.close() stopAiming()
+    if not publicGallery then publicGallery=require("gallery_screen")(backToHome) end
+    publicGallery.open()
+end
 menu=makeMenu(function(index)
     if index==1 then openLibrary() elseif index==2 then openStudio("editor")
-    elseif index==3 then openPaint() elseif index==4 then openStudio("gallery") end
+    elseif index==3 then openPaint() elseif index==4 then openStudio("gallery") elseif index==6 then openPublic() end
 end, backToHome, paint, function()
     return {marks=artworkCount(),limit=capacity,handles=artHandles+(if preview then #preview.handles else 0),budget=handleBudget,
         strokes=ink.strokes,visiblePaint=ink.live,samples=ink.total}
 end, assert(reskate.package.read_json("manifest.json")).version_number)
 
 local function openHome()
+    if publicGallery then publicGallery.close() end
     selector.close()
     studio.close()
     paint.close()
@@ -387,6 +395,7 @@ reskate.on("menu_changed", function(state)
     if ready() then openHome() else reskate.ui.toast("Enter a map to open Graffiti Lab.") end
 end)
 local actions = {
+    ["Public Artworks"] = openPublic,
     ["Open Wall Paint"] = openPaint,
     ["Open Custom Editor"] = function() openStudio("editor") end,
     ["Open Blackbook"] = function() openStudio("gallery") end,
@@ -398,6 +407,10 @@ local actions = {
     ["Remove Switchback"] = remove,
 }
 local function action(name)
+    if publicGallery and publicGallery.active() then
+        if name=="Aim Switchback" or name=="Place Switchback" or name=="Remove Switchback" then return end
+        publicGallery.close()
+    end
     if (menu.active() or selector.active() or studio.active() or paint.active()) and (name == "Aim Switchback" or name == "Place Switchback" or name == "Remove Switchback") then return end
     if actions[name] and ready() then
         if name=="Open Custom Editor" or name=="Open Blackbook" or name=="Open Premade Art" or name=="Open Wall Paint" then
@@ -417,7 +430,7 @@ reskate.input.bind("Place Switchback", "Ctrl+P")
 reskate.input.bind("Remove Switchback", "Ctrl+R")
 reskate.on("action", action)
 reskate.console.command("graffiti", "menu, library, editor, blackbook, paint, aim, place, remove or status", function(args)
-    local commands = {menu = "Open Graffiti Lab", library = "Open Premade Art", editor = "Open Custom Editor", blackbook = "Open Blackbook",
+    local commands = {public = "Public Artworks", menu = "Open Graffiti Lab", library = "Open Premade Art", editor = "Open Custom Editor", blackbook = "Open Blackbook",
         aim = "Aim Switchback", place = "Place Switchback", remove = "Remove Switchback", paint = "Open Wall Paint"}
     if commands[args[1]] then action(commands[args[1]]) return end
     local available = ready()

@@ -53,6 +53,11 @@ In 0.6.3 on Turbo Token Arcade, **Open Graffiti Lab** in the Plugins menu opened
 - In 0.6.11 Studio compiles the original `art/spray-can/can.glb` into a rigid mesh and an ObjectBlueprint. The package carries their geometry, three textures, material variation and shader dependencies in the shared root bundle. The local paint can uses the right middle-knuckle joint (54) with rotation enabled and collision disabled. ReSkate reported the native object in San Vansterdam and the model followed the glove as the aim moved. [Native entity attachment](https://github.com/Dingo-Shenanigans/ReSkate/blob/8e4aefca153ce9cb622074ae4de05f81fa71d09c/Extension/Plugins/plugin_api_world.cpp#L555-L649)
 - The spray mist uses an original feathered texture and short-lived puffs at the nozzle and wall. ReSkate projects each world image using the active camera. Only the puffs use this overlay, which can draw through foreground geometry. The can uses the game’s mesh renderer. [World-image renderer](https://github.com/Dingo-Shenanigans/ReSkate/blob/8e4aefca153ce9cb622074ae4de05f81fa71d09c/Extension/UI/Overlay/plugin_overlay.cpp#L569-L581)
 
+## Public gallery
+
+- ReSkate enforces a maximum of four registered screens per plugin. Opening Public Artworks as a fifth screen raised an error in-game. Sharing one input screen between the editor and Wall Paint allowed the gallery to open from the main menu. [Screen registration](https://github.com/Dingo-Shenanigans/ReSkate/blob/8e4aefca153ce9cb622074ae4de05f81fa71d09c/Extension/Plugins/plugin_api_world.cpp#L3392-L3404)
+- With the gallery hostname declared in the manifest and Web permission enabled, a player skating offline in San Vansterdam could browse, publish and download over HTTPS. Two independent gallery credentials on one installation completed the transfer through the live Worker and D1. [Live test and remaining checks](../service/gallery/README.md#live-graffiti-lab-test)
+
 ## Unresolved questions and how to test them
 
 1. **How does the decal behave behind other geometry?** The core playtest confirmed orientation, alpha, lateral camera movement and removal. Occlusion by a separate foreground object and projection through thin partitions still need a dedicated test. [Playtest record](MILESTONE_1.md)

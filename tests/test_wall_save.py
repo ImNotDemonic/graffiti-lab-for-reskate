@@ -16,7 +16,7 @@ local function visit(name)
 end
 local function brush()
     console.graffiti({"paint"}) step() step()
-    assert(active=="Wall Paint")
+    assert(active=="Graffiti Lab Studio")
 end
 local function at(x,y) cursor.position=v(x,y,0) step() end
 local function drag(x1,x2,y)

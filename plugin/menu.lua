@@ -6,6 +6,7 @@ local rows={
     {"Wall Painting","Equip the can and paint straight onto surfaces.","",596,112},
     {"Saved Gallery","","",748,60},
     {"Settings","","",812,60},
+    {"Public Artworks","","",876,60},
 }
 local tabs={"Controls","Painting","Performance"}
 local controls={
@@ -71,7 +72,8 @@ return function(choose, returnHome, paint, stats, version)
                 if selected then u.rect(44,y,484,h,dock.blaze) end
                 u.border(64,mid-18,36,36,if selected then "#91360E" else "#48494B")
                 u.text(82,mid-12,tostring(i),19,fg,"bold","centre")
-                u.heading(123,if i<=3 then y+16 else mid-10,row[1],if i<=3 then 29 else 20,fg)
+                if i==6 then u.text(123,mid-12,row[1],21,fg,"bold")
+                else u.heading(123,if i<=3 then y+16 else mid-10,row[1],if i<=3 then 29 else 20,fg) end
                 if i<=3 then
                     u.text(123,y+56,if disabled then "Available offline" else row[2],15,sub)
                     if not disabled and row[3]~="" then u.text(123,y+77,row[3],15,sub) end

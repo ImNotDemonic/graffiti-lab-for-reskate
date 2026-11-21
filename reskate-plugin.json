@@ -13,12 +13,14 @@
     "input",
     "session.read",
     "net.session",
+    "net.http",
     "console",
     "menu",
     "ui.screen",
     "overlay",
     "files"
   ],
+  "domains": ["graffiti-lab-gallery.graffiti-lab-gallery.workers.dev"],
   "effects": [
     "world/materials/decal/reskate_graffitilab/switchback_dv",
     "world/materials/decal/reskate_graffitilab/birds_dv",

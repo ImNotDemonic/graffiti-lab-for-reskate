@@ -4,6 +4,10 @@ A ReSkate graffiti mod with premade artwork, custom drawing and surface placemen
 
 Graffiti Lab places saved Blackbook drawings and premade graffiti on walls in offline ReSkate. The premade library contains 46 designs. The supplied pack adds 12 ReSkate lettering pieces, 12 skate culture designs, five characters, eight skate phrases and six experimental works. Bonehead joins the Characters filter. Switchback and Birds are under Stencils.
 
+## Public gallery test build
+
+Open **Graffiti Lab → Public Artworks** on a loaded map. Browse, preview and download static art. The Publish tab accepts a selected local GLART1 import or saved Blackbook drawing. A creator key enables publishing, authenticated downloads, reports and owner unpublishing. Downloaded copies remain available through Premade Art offline. [Service and account setup](service/gallery/README.md)
+
 ## Current status
 
 Switchback passed the preview, placement and removal playtest on the metal kiosk at Blue Light Beach in San Vansterdam and on an interior wall in Turbo Token Arcade. Both marks stayed fixed as the camera moved. A grille at the kiosk accepted the preview but displayed the artwork only on its bars. [Playtest record](docs/MILESTONE_1.md)

@@ -71,9 +71,10 @@ local function rectangles(grid,w)
     return parts
 end
 
-function art.compile(doc)
+function art.compile(doc, maximumWidth)
     if #doc.strokes==0 then return nil,"Draw and save at least one stroke first." end
     for _,w in {128,64,32,16} do
+        if maximumWidth and w>maximumWidth then continue end
         local parts=rectangles(raster(doc,w),w)
         if parts then
             for _,p in parts do

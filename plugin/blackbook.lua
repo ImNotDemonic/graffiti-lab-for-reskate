@@ -24,8 +24,12 @@ function book.pointCount(doc)
     return count
 end
 
+local function fileName(file)
+    return type(file) == "string" and file:match("^blackbook%-%d%d%d%d%.json$") ~= nil
+end
+
 local function valid(doc)
-    if type(doc) ~= "table" or doc.version ~= 1 or type(doc.name) ~= "string"
+    if type(doc) ~= "table" or (doc.version ~= 1 and doc.version ~= 2) or type(doc.name) ~= "string"
         or #doc.name < 1 or #doc.name > 32 or doc.name:find("[^ -~]")
         or not array(doc.strokes, book.maxStrokes) then return false end
     for _, stroke in doc.strokes do
@@ -51,20 +55,27 @@ function book.list()
 end
 
 function book.read(file)
+    if not fileName(file) then return nil, "Invalid drawing ID" end
     local raw, why = reskate.files.read(file)
     if not raw then return nil, why end
     local ok, doc = pcall(reskate.json.decode, raw)
     if not ok or not valid(doc) then return nil, "Unsupported or damaged drawing" end
+    if doc.version == 2 and (doc.kind ~= "drawing" or doc.artworkId ~= file) then
+        return nil, "Drawing ID does not match its file"
+    end
+    -- Reading a legacy drawing never modifies its file.
+    doc.kind, doc.artworkId = "drawing", file
     return doc, raw
 end
 
 function book.new()
-    return {version = 1, name = "Untitled", strokes = {}}
+    return {version = 2, kind = "drawing", name = "Untitled", strokes = {}}
 end
 
 function book.save(doc, file, original)
     if not valid(doc) then return nil, "Drawing exceeds the supported limits" end
     if file then
+        if not fileName(file) or (doc.artworkId and doc.artworkId ~= file) then return nil, "Drawing ID mismatch" end
         local current, why = reskate.files.read(file)
         if not current then return nil, why end
         if current ~= original then return nil, "File changed on disk. Reopen it before saving." end
@@ -75,9 +86,24 @@ function book.save(doc, file, original)
         if number > 9999 then return nil, "Drawing IDs exhausted" end
         file = string.format("blackbook-%04d.json", number)
     end
-    local raw = reskate.json.encode(doc)
+    local saved = table.clone(doc)
+    saved.version, saved.kind, saved.artworkId = 2, "drawing", file
+    local encoded, raw = pcall(reskate.json.encode, saved)
+    if not encoded then return nil, "Cannot encode drawing" end
+    if original and doc.version == 1 then
+        local backup = "recovery/blackbook-v1/" .. file
+        local prior, why = reskate.files.read(backup)
+        if prior == nil then
+            if why ~= "not found" then return nil, why or "Cannot check the recovery copy" end
+            local copied, problem = reskate.files.write(backup, original)
+            if not copied then return nil, problem or "Cannot preserve the original drawing" end
+        elseif prior ~= original then
+            return nil, "A different recovery copy exists. The original drawing is protected."
+        end
+    end
     local ok, why = reskate.files.write(file, raw)
     if not ok then return nil, why end
+    doc.version, doc.kind, doc.artworkId = saved.version, saved.kind, saved.artworkId
     return file, raw
 end
 

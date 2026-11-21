@@ -1,5 +1,15 @@
 -- Dock geometry is in 1080-line design pixels. ReSkate scales font sizes by viewport height.
 local dock = {ink="#F2EFE9", muted="#AAA7A1", blaze="#FF5A1F", dark="#101113", panel="#0D0E10F0"}
+-- Wall Paint and the editor draw their own HUDs. Both use this native screen
+-- for input capture so the plugin stays within ReSkate's four-screen limit.
+local editingScreen
+function dock.editingScreen()
+    if not editingScreen then
+        editingScreen="Graffiti Lab Studio"
+        reskate.ui.screen(editingScreen,function() end,{panel=false})
+    end
+    return editingScreen
+end
 local titles = {
     ["Graffiti"]={0,3.48}, ["Lab"]={1,1.50}, ["Premade Art"]={2,4.75},
     ["Custom Editor"]={3,5.65}, ["Wall Painting"]={4,5.15}, ["Saved Gallery"]={5,5.6},

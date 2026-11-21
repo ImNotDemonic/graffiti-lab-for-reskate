@@ -2,7 +2,6 @@ local dock = require("dock")
 local colourNames={"Chalk","Ink","Blaze","Sun","Acid","Cobalt","Pink","Chrome"}
 local surface = require("surface")
 local palette = require("blackbook").palette
-local title = "Wall Paint"
 local widths = {0.025, 0.04, 0.065}
 local maxSamples = 6 -- Eight world queries per sample, below the host's 64-ray tick limit.
 
@@ -39,6 +38,7 @@ local function segment(first, last, width)
 end
 
 return function(recordSample, undoMark, onBack, usage, eraseAt, saveState, checkpoint)
+    local title=dock.editingScreen()
     local open, previousDown, latched, waitUp = false, false, false, true
     local screen, hover, lastPixel, lastHit, mark
     local colour, size, sampleCount, pathLength = 3, 2, 0, 0
@@ -96,7 +96,6 @@ return function(recordSample, undoMark, onBack, usage, eraseAt, saveState, check
         return edge
     end
 
-    reskate.ui.screen(title, function() end, {panel=false})
     reskate.on("screen_closed", function(name)
         if name == title and open then
             finish()

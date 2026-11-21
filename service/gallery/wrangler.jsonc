@@ -1,0 +1,12 @@
+{
+  "name": "graffiti-lab-gallery",
+  "main": "worker.mjs",
+  "compatibility_date": "2026-11-01",
+  "workers_dev": true,
+  "d1_databases": [{
+    "binding": "DB",
+    "database_name": "graffiti-lab-gallery",
+    "database_id": "637fabf4-b0bf-48c9-bbc0-669e9fd230aa",
+    "migrations_dir": "migrations"
+  }]
+}
