@@ -4,7 +4,7 @@ local ink, muted, blaze = "#F2EFE9", "#B5B2AC", "#FF5A1F"
 local tileX, tileY, tileSize, tileStep = 48, 198, 152, 164
 local buttonY = 880
 
-return function(pieces, onChoose)
+return function(pieces, onChoose, openStudio)
     local open, focus, scale = false, 1, 1
     local held = {}
 
@@ -54,6 +54,8 @@ return function(pieces, onChoose)
         label(68, buttonY + 13, "PLACE ON WALL", "heading", 26, "#101113")
         label(422, buttonY + 18, "ENTER / A", "bold", 17, "#281914")
         label(48, 980, "Left / Right   Browse         Esc / B   Close", "body", 18, muted)
+        label(48, 1020, "Custom Editor", "bold", 20, ink)
+        label(304, 1020, "Blackbook", "bold", 20, ink)
     end)
 
     reskate.on("tick", function()
@@ -81,6 +83,10 @@ return function(pieces, onChoose)
                 if pieces[col] and (x - tileX) % tileStep <= tileSize then focus = col end
             elseif x >= 48 and x <= 528 and y >= buttonY and y <= buttonY + 60 then
                 accept = true
+            elseif x >= 48 and x <= 528 and y >= 1012 and y <= 1060 then
+                close()
+                openStudio(if x < 288 then "editor" else "gallery")
+                return
             end
         end
         if accept then

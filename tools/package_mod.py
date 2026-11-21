@@ -70,7 +70,8 @@ def build(game, studio, author, destination):
             for path in sorted([*payload, patch / ".reskate-studio-patch", patch / "layout.toc"]):
                 archive.write(path, path.relative_to(patch))
             for path in ("manifest.json", "reskate-plugin.json", "plugin/main.lua", "plugin/surface.lua",
-                         "plugin/selector.lua", "art/catalogue.json"):
+                         "plugin/selector.lua", "plugin/blackbook.lua", "plugin/studio.lua",
+                         "art/checker.png", "art/catalogue.json"):
                 archive.write(ROOT / path, path)
             for piece in catalogue:
                 path = f"art/{piece['id']}.png"
@@ -80,7 +81,10 @@ def build(game, studio, author, destination):
                              "Mods/GraffitiLab beside Skate.exe, then launch offline and approve the plugin.\n\n"
                              "Press Ctrl+L to open Premade Art. Click a tile or use Left/Right, then choose Place on Wall "
                              "or press Enter to aim. Ctrl+P confirms. Ctrl+G toggles aiming. Ctrl+R cancels a "
-                             "preview or removes the last mark. Esc closes the selector.\n")
+                             "preview or removes the last mark. Esc closes the selector.\n\n"
+                             "Ctrl+E opens the drawing editor. Drag on the canvas, choose a colour and size, or rename "
+                             "the drawing. Ctrl+S saves to Blackbook. Ctrl+B opens the gallery. Click a saved piece "
+                             "to edit it. Custom drawings stay in ReSkate's private plugin data across restarts.\n")
             archive.write(scratch / "icon.png", "icon.png")
         with ZipFile(scratch / "GraffitiLab.zip") as archive:
             if archive.testzip():

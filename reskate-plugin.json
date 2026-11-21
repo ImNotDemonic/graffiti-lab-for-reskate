@@ -2,7 +2,7 @@
   "api": 1,
   "side": "client",
   "entry": "plugin/main.lua",
-  "permissions": ["camera", "world.raycast", "effects", "input", "session.read", "console", "ui.screen", "overlay"],
+  "permissions": ["camera", "world.raycast", "effects", "input", "session.read", "console", "ui.screen", "overlay", "files"],
   "effects": [
     "world/materials/decal/reskate_graffitilab/switchback_dv",
     "world/materials/decal/reskate_graffitilab/birds_dv",

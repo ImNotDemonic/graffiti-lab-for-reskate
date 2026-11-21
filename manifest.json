@@ -1,7 +1,7 @@
 {
   "name": "GraffitiLab",
-  "version_number": "0.2.0",
+  "version_number": "0.3.0",
   "website_url": "",
-  "description": "Browse three original graffiti designs and place them on nearby walls in offline play.",
+  "description": "Draw and edit graffiti in your Blackbook, and place three premade designs on nearby walls offline.",
   "dependencies": []
 }

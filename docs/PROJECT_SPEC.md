@@ -36,4 +36,6 @@ Persistent world placements are a separate decision from a persistent artwork li
 
 ## Runtime structure
 
-`plugin/main.lua` owns the active design, transient preview and ordered list of confirmed marks. Confirming transfers that preview handle to the list. Selecting a different piece releases only the preview. `plugin/selector.lua` draws the Premade Art dock and handles browsing, confirmation and dismissal. `plugin/surface.lua` validates the wall footprint. `art/catalogue.json` and the three PNGs are shared by the selector and offline asset build. `tools/` packages the compiled patch and Luau plugin. Drawing, persistence and networking belong to later milestones.
+`plugin/main.lua` owns the active premade design, transient preview and confirmed marks. `plugin/selector.lua` draws the Premade Art dock and `plugin/surface.lua` validates the wall footprint. `art/catalogue.json` and the three artwork PNGs feed the selector and offline asset build. `tools/` packages the compiled patch and Luau plugin.
+
+`plugin/studio.lua` draws the editor and paginated Blackbook gallery, samples marker strokes in 2048 × 1024 design coordinates and handles undo/redo. `plugin/blackbook.lua` validates, lists, reads and saves version 1 drawing files. Each stroke stores its palette index, brush width and ordered coordinate pairs. Saving an edit retains the file ID. Four thumbnails per page and bounded stroke sizes keep the renderer within its shape budget.
