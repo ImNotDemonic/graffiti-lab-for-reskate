@@ -173,36 +173,7 @@ def build(game, studio, author, destination, native_from=None):
             archive.writestr("art/Import Artwork.html", importer.replace("__WALL_INKS__", json.dumps(palette)))
             mist_texture(scratch / "spray-mist.png")
             archive.write(scratch / "spray-mist.png", "art/spray-mist.png")
-            archive.writestr("README.md", "# Graffiti Lab " + manifest["version_number"] + "\n\n"
-                             "Premade graffiti for ReSkate 20261116. With the game closed, extract into "
-                             "Mods/GraffitiLab beside Skate.exe, then launch and approve the plugin. For multiplayer, "
-                             "each player needs this version under the same mod folder name. While in the same session and map, "
-                             "confirmed premade marks are shared, including with late joiners while the artist remains online. "
-                             "Custom artwork and freehand painting are available offline. The local skater holds a textured 3D spray can "
-                             "and sprays a short mist while painting or confirming a premade. Freehand hisses while paint flows. "
-                             "Confirming a premade plays a short burst. Click the wall toolbar size meter or use [ and ] "
-                             "to adjust paint and eraser sizes independently.\n\n"
-                             "For your own offline premades, choose Premade Art > Import Art and open Import Artwork.html. "
-                             "Choose a PNG, JPEG or WebP, preview the 16 wall inks, and save the .graffiti file beside the importer. "
-                             "Return to the selector and click Refresh to use it under My imports.\n\n"
-                             "Open Insert > Plugins > Graffiti Lab > Open Graffiti Lab, then press Insert again. "
-                             "Ctrl+L opens the Graffiti Lab main menu. In Premade Art, filter by category or search by name, lettering or pack number. Use the page arrows to browse. Select a tile and choose Place on Wall "
-                             "or press Enter to aim. Centre the ring on a flat wall within 8 m. When Wall ready appears, "
-                             "left-click, press Ctrl+P or tap A to place and return to your selection. Ctrl+G toggles aiming. Ctrl+R cancels a "
-                             "preview or removes the last mark. Esc returns to the main menu.\n\n"
-                             "Ctrl+E opens the drawing editor. Drag on the canvas, choose a colour and size, or rename "
-                             "the drawing. Ctrl+S saves to Blackbook. Ctrl+B opens the gallery. Click a saved piece "
-                             "to edit it, or choose Place on wall below its thumbnail. Aim at a suitable wall, press "
-                             "Ctrl+P to confirm and return to the same gallery page. After leaving the menus, Ctrl+R removes the latest mark.\n\n"
-                             "Ctrl+I opens Wall Paint. Hold the left mouse button and move over a wall, or press Space "
-                             "or click Flow to toggle continuous spray. Use 1-8 for colour, [ and ] for width, Ctrl+Z to undo a stroke "
-                             "and Esc to put the brush away. Keep drawing across the wall with no stroke or stamp count limit. "
-                             "Straight portions of a stroke share a render decal. Wall Paint saves each individual brush sample for its map. Select Eraser or press E and drag to erase ink. "
-                             "When the renderer fills, the brush prioritises nearby and recent ink.\n\n"
-                             "## License\n\n"
-                             "Graffiti Lab code is licensed under GPL-3.0-only. The included artwork is rights reserved. "
-                             "See LICENSE and art/NOTICE.md in this ZIP. "
-                             "[Source code](https://github.com/ImNotDemonic/graffiti-lab-for-reskate)\n")
+            archive.write(ROOT / "docs/THUNDERSTORE_README.md", "README.md")
         with ZipFile(scratch / "GraffitiLab.zip") as archive:
             if archive.testzip():
                 raise ValueError("ZIP CRC verification failed")
