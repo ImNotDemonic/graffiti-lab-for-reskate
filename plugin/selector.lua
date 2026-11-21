@@ -1,4 +1,6 @@
 local dock=require("dock")
+local imports=require("imports")
+local palette=require("blackbook").palette
 local title="Premade Art"
 local columns, pageSize=3,9
 local tileWidth,tileHeight=154,116
@@ -7,6 +9,8 @@ local function tilePosition(slot)
 end
 
 return function(pieces,onChoose,onBack)
+    local stockCount=#pieces
+    local importMessage,nextRead=nil,0
     local categories,searchText={},{}
     for i,piece in pieces do
         if not table.find(categories,piece.category) then table.insert(categories,piece.category) end
@@ -14,6 +18,7 @@ return function(pieces,onChoose,onBack)
     end
     table.sort(categories)
     table.insert(categories,1,"All")
+    table.insert(categories,"My imports")
     local open,focus,category,query,typing=false,1,1,"",false
     local held,visible,scale={}, {}, nil
     -- Focus is a position in the filtered list; every way to move it reveals its page.
@@ -26,6 +31,26 @@ return function(pieces,onChoose,onBack)
             end
         end
         focus=table.find(visible,keep) or 1
+    end
+    local function refresh(importsOnly,keep)
+        local id=pieces[keep or 0] and pieces[keep].id
+        for i=#pieces,stockCount+1,-1 do pieces[i],searchText[i]=nil,nil end
+        if not reskate.session.active() then
+            local designs=imports.list()
+            for _,piece in designs do
+                table.insert(pieces,piece)
+                table.insert(searchText,string.lower(piece.name.." My imports"))
+            end
+        end
+        if importsOnly then category,query=#categories,"" end
+        for i,piece in pieces do if piece.id==id then keep=i break end end
+        filter(keep)
+    end
+    local function openImporter()
+        if reskate.session.active() then return end
+        local ok,why=imports.reveal()
+        importMessage=if ok then "Open Import Artwork.html in the folder, then refresh." else tostring(why)
+        refresh(true)
     end
     local function selectCategory(index)
         category=index
@@ -53,9 +78,30 @@ return function(pieces,onChoose,onBack)
             local w=math.min(width,height*piece.aspect)
             local h=w/piece.aspect
             local left,top=x+(width-w)/2,y+(height-h)/2
-            d:image("art/premades.png",u.p(left,top),u.p(left+w,top+h),{uv=piece.thumb})
+            if piece.file then
+                if piece.parts then
+                    for _,part in piece.parts do
+                        u.rect(left+(part.x+0.5-part.w/2)*w,top+(part.y+0.5-part.h/2)*h,
+                            part.w*w,part.h*h,palette[part.colour])
+                    end
+                else
+                    u.text(x+4,y+24,if piece.problem then "Invalid file" else "Loading…",15,dock.muted)
+                end
+                return
+            end
+            d:image(piece.sheet,u.p(left,top),u.p(left+w,top+h),{uv=piece.thumb})
         end
         u.header(title)
+        if not reskate.session.active() then
+            u.rect(309,82,112,38,"#38393B")
+            u.text(365,92,"IMPORT ART",14,dock.ink,"bold","centre")
+            u.rect(426,82,102,38,"#38393B")
+            u.text(477,92,"REFRESH",14,dock.ink,"bold","centre")
+        end
+        if category==#categories then
+            u.text(36,330,if reskate.session.active() then "Personal art is available offline."
+                else importMessage or "Import Art opens your local artwork folder.",15,dock.muted)
+        end
         u.rect(36,164,492,46,"#18191C")
         u.border(36,164,492,46,if typing then dock.blaze else "#393A3D")
         u.text(50,177,if typing then query.."|" elseif query~="" then query else "Search name, lettering or number",17,
@@ -82,7 +128,7 @@ return function(pieces,onChoose,onBack)
         end
         if #visible==0 then
             u.text(36,355,"No pieces match.",22,dock.ink,"bold")
-            u.text(36,395,"Try another category or clear the search.",18,dock.muted)
+            u.text(36,395,if category==#categories then "Save a .graffiti file in imports, then refresh." else "Try another category or clear the search.",18,dock.muted)
         else
             local function pageButton(x,label,enabled)
                 u.rect(x,740,106,36,"#191A1D")
@@ -96,7 +142,7 @@ return function(pieces,onChoose,onBack)
             thumbnail(piece,39,811,96,96)
             u.text(148,825,string.upper(piece.name),if #piece.name>16 then 24 else 29,dock.ink,"heading")
             local detail=if piece.number then "No. "..piece.number else piece.colourway
-            u.text(148,872,piece.category.."  ·  "..detail.."  ·  0.65 × 0.65 m",16,dock.muted)
+            u.text(148,872,if piece.problem then "Re-export this image and refresh." else piece.category.."  ·  "..detail..string.format("  ·  %.2f × %.2f m",piece.width or 0.65,piece.height or 0.65),16,dock.muted)
             u.rect(36,944,492,52,dock.blaze)
             u.heading(51,960,"Place on Wall",21,dock.dark)
             u.text(509,960,"Enter / A",17,dock.dark,"bold","right")
@@ -105,12 +151,22 @@ return function(pieces,onChoose,onBack)
     end)
     reskate.on("tick",function()
         if not open then return end
+        if not reskate.session.active() and reskate.time.now()>=nextRead then
+            for slot=1,math.min(pageSize,#visible-page()*pageSize) do
+                local piece=pieces[visible[page()*pageSize+slot]]
+                if piece.file and not piece.parts and not piece.problem then
+                    imports.load(piece)
+                    nextRead=reskate.time.now()+100
+                    break
+                end
+            end
+        end
         local cursor=reskate.input.cursor()
         local pad=dock.buttons()
         local now={left=reskate.input.key("Left") or pad.left,right=reskate.input.key("Right") or pad.right,
             up=reskate.input.key("Up") or pad.up,down=reskate.input.key("Down") or pad.down,
             accept=reskate.input.key("Enter") or pad.a,back=pad.b,click=cursor and cursor.left,
-            slash=reskate.input.key(191),erase=reskate.input.key("Backspace"),
+            import=reskate.input.key("I"),reload=reskate.input.key(116),slash=reskate.input.key(191),erase=reskate.input.key("Backspace"),
             prev=reskate.input.key("Q") or pad.lb,next=reskate.input.key("E") or pad.rb}
         local prev=held
         held=now
@@ -124,6 +180,8 @@ return function(pieces,onChoose,onBack)
         elseif now.slash and not prev.slash then
             reskate.input.text(true) typing=true return
         else
+            if now.import and not prev.import then openImporter() return end
+            if now.reload and not prev.reload then refresh(true,visible[focus]) return end
             local shift=if now.prev and not prev.prev then -1 elseif now.next and not prev.next then 1 else 0
             if shift~=0 then selectCategory((category-1+shift)%#categories+1) end
             if #visible>0 then
@@ -135,6 +193,10 @@ return function(pieces,onChoose,onBack)
         if now.click and not prev.click and scale and scale>0 then
             local x,y=cursor.position.x/scale,cursor.position.y/scale
             if dock.inside(x,y,36,32,66,33) then back() return end
+            if not reskate.session.active() then
+                if dock.inside(x,y,309,82,112,38) then openImporter() return end
+                if dock.inside(x,y,426,82,102,38) then refresh(true,visible[focus]) return end
+            end
             if dock.inside(x,y,36,164,492,46) then
                 if x>=481 and query~="" then query="" filter(visible[focus]) end
                 typing=true reskate.input.text(true) return
@@ -151,7 +213,14 @@ return function(pieces,onChoose,onBack)
             end
             accept=dock.inside(x,y,36,944,492,52)
         end
-        if accept and #visible>0 then close() onChoose(visible[focus]) end
+        if accept and #visible>0 then
+            local piece=pieces[visible[focus]]
+            if piece.file and (reskate.session.active() or not imports.load(piece)) then
+                reskate.ui.toast(piece.problem or "Imported artwork is available offline.")
+                return
+            end
+            close() onChoose(visible[focus])
+        end
     end)
     local function resume()
         open,typing,held=true,false,{click=true,accept=true,back=true}
@@ -159,7 +228,7 @@ return function(pieces,onChoose,onBack)
     end
     return {open=function(index)
         category,query=1,""
-        filter(index)
+        refresh(false,index)
         resume()
     end,resume=resume,close=close,active=function() return open end}
 end

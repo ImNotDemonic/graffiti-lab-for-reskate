@@ -73,9 +73,13 @@ return function(restore)
         return call(reskate.files.write,page.path,page.header..table.concat(rows))
     end
 
-    function store.flush(all,finished)
+    function store.checkpoint()
+        nextAuto=0
+    end
+
+    function store.flush(all)
         local now=reskate.time.now()
-        if not next(dirty) or (not all and (now<nextWrite or (not finished and now<nextAuto))) then return end
+        if not next(dirty) or (not all and (now<nextWrite or now<nextAuto)) then return end
         for path,page in dirty do
             if not all and page.retry and now<page.retry then continue end
             local ok,why=writePage(page)
@@ -88,7 +92,8 @@ return function(restore)
             end
         end
         if not next(dirty) then store.warning=nil end
-        nextWrite,nextAuto=now+75,now+1000
+        local completed=reskate.time.now()
+        nextWrite,nextAuto=completed+75,completed+1000
     end
 
     function store.close()

@@ -1,4 +1,5 @@
 local surface = require("surface")
+local arm = require("spray_arm")
 local makeMenu = require("menu")
 local makeSelector = require("selector")
 local makeStudio = require("studio")
@@ -78,6 +79,7 @@ local function stopAiming()
 end
 
 local function reset()
+    arm.reset()
     openAfterMenu, fromHome, pendingHome = false,false,false
     menu.close()
     sharing.reset()
@@ -105,6 +107,7 @@ end
 -- On build 20261116 the host has a lobby world before its first peer handshakes.
 -- Keep its confirmed premades across that edge. Discard private art and other worlds.
 local function changeConnection(world, map)
+    arm.reset()
     fromHome,pendingHome=false,false
     menu.close()
     sharing.reset()
@@ -135,7 +138,7 @@ local function ready()
         or (not available and (aiming or #placed>0 or paint.active() or sharing.count()>0)) then
         reset()
     end
-    if active and design.parts then design=pieces[selected] end
+    if active and design.parts then selected,design=1,pieces[1] end
     epoch,sessionActive,worldId,mapName=current,active,world,map
     if available and offlineMap and not unloadingMap then
         if store.map~=offlineMap then store.open(offlineMap) end
@@ -206,7 +209,7 @@ local function aim(piece, onPlaced)
     local start = os.clock()
     local visible = updatePreview()
     reskate.log(piece.name .. (if visible then " preview active" else " selected, waiting for a wall"))
-    if visible and piece.parts then
+    if visible and piece.resolution then
         reskate.log(string.format("Blackbook preview %s: %d decals, %d x %d, initial update %.2f ms",
             piece.id,#piece.parts,piece.resolution,piece.resolution/2,(os.clock()-start)*1000))
     end
@@ -238,7 +241,7 @@ end, function()
         if placed[i].samples then
             local samples=#placed[i].samples
             removeMark(i,store.erase)
-            store.flush(false,true)
+            store.checkpoint()
             reskate.log("Undid paint stroke (" .. samples .. " samples)")
             return "Stroke removed"
         end
@@ -251,7 +254,7 @@ function(hit,radius)
         local index=table.find(placed,mark)
         if index then table.remove(placed,index) end
     end)
-end, function() return store.ready,store.warning end, function() store.flush(false,true) end)
+end, function() return store.ready,store.warning end, store.checkpoint)
 local function openPaint()
     if sessionActive then return end
     selector.close()
@@ -279,7 +282,10 @@ local function place()
     end
     if not updatePreview() then reskate.log("Placement needs a valid preview") return end
     for _,handle in preview.handles do fx.opacity(handle,1) end
-    if not design.parts then preview.world,preview.map=scope() end
+    if not design.parts then
+        preview.world,preview.map=scope()
+    end
+    if not design.parts or design.file then arm.place(preview.transform) end
     table.insert(placed, preview)
     artHandles+=#preview.handles
     nextMarkExpiry=math.min(nextMarkExpiry,preview.expires)
@@ -299,7 +305,7 @@ local function remove()
         local details=if piece.samples then #piece.samples.." paint samples" else "handle "..piece.handles[1].." ("..#piece.handles.." decals)"
         if piece.samples and not store.ready then return end
         removeMark(#placed,store.erase)
-        if piece.samples then store.flush(false,true) end
+        if piece.samples then store.checkpoint() end
         if sessionActive then sharing.changed() end
         reskate.log("Removed "..piece.id.." "..details)
     end
@@ -437,10 +443,9 @@ end)
 reskate.on("level_loaded",function() unloadingMap=nil end)
 reskate.on("unload",reset)
 reskate.on("tick", function(dt)
-    store.flush(false)
-    if not ready() then pendingHome=false menu.close() selector.close() studio.close() paint.close() return end
+    if not ready() then arm.reset() pendingHome=false menu.close() selector.close() studio.close() paint.close() return end
     if pendingHome and not reskate.input.key("Escape") then openHome() end
-    if not sessionActive and not aiming and #placed == 0 and not paint.active() then return end
+    if not sessionActive and not aiming and #placed == 0 and not paint.active() then arm.tick(dt) return end
     elapsed += dt
     if not sessionActive and artworkCount()>0 then
         -- A host can leave one empty lobby and host the same map again. Once the
@@ -472,21 +477,26 @@ reskate.on("tick", function(dt)
         end
         for i=#placed,keep+1,-1 do placed[i]=nil end
     end
+    local brushHit, brushColour
     if sessionActive then
         sharing.tick(placed,worldId,mapName)
     else
         local previewSlots=if aiming then (if design.parts then #design.parts else 1) else 0
         ink.reserve(artHandles+previewSlots)
-        paint.tick()
+        brushHit,brushColour=paint.tick()
         ink.tick(reskate.time.now())
     end
-    if not aiming then return end
-    placementInput()
-    if not aiming then return end
-    if preview and elapsed >= preview.expires then discardPreview() end
-    sinceSample += dt
-    if sinceSample >= 100 then
-        sinceSample = 0
-        updatePreview()
+    if aiming then placementInput() end
+    if aiming then
+        if preview and elapsed >= preview.expires then discardPreview() end
+        sinceSample += dt
+        if sinceSample >= 100 then
+            sinceSample = 0
+            updatePreview()
+        end
     end
+    local premadeHit = aiming and showAimControls and (not design.parts or design.file) and preview and preview.transform
+    arm.tick(dt,brushHit or premadeHit,brushHit~=nil,brushColour)
 end)
+-- Disk replacement can block. Keep checkpoint I/O out of the interactive paint callback.
+reskate.on("tick",function() store.flush(false) end)

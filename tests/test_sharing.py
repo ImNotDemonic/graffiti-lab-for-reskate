@@ -35,6 +35,8 @@ local function wall(a,b)
     return {status="hit",position=a+(b-a)*((-2-a.z)/(b.z-a.z))}
 end
 local reskate = {
+    skater={joint=function(id) if id==47 then return {position=v(0,1.4,0)} end end,reach=function() return true end},
+    entities={bounds=noop,set=noop,remove=noop,status=noop},
     package={read_json=function() return {{id="switchback",name="Switchback"}} end},
     effects={
         state=function() return available,1 end, clear=function() table.clear(live) end,
@@ -61,6 +63,7 @@ local reskate = {
     input={bind=noop,allowed=function() return true end,key=noop,gamepad=noop},
     console={command=function(n,_,f) console[n]=f end},log=noop
 }
+reskate.audio={preload=function() end,play=function() return 1 end,stop=function() end}
 local function require(name) return assert(modules[name],name) end
 local function panel() return {close=noop,open=noop,active=function() return false end,tick=noop,expiring=noop} end
 modules.paint,modules.selector,modules.studio,modules.menu,modules.wall_art=panel,panel,panel,panel,{}
@@ -214,7 +217,7 @@ print("PASS: aim prompt, invalid wall, held controls, menu input, mouse placemen
 
 def run(luau, directory, name, script):
     modules = []
-    for module in ("surface", "sharing", "wall_store", "wall_ink"):
+    for module in ("surface", "sharing", "wall_store", "wall_ink", "spray_fx", "spray_arm"):
         code = (ROOT / "plugin" / (module + ".lua")).read_text(encoding="utf-8")
         modules.append(f"modules.{module}=(function()\n{code}\nend)()")
     main = (ROOT / "plugin/main.lua").read_text(encoding="utf-8")

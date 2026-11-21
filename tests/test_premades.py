@@ -14,8 +14,13 @@ from test_menu import ROOT, run
 CHECKS = """
 online=false step()
 local thumbnails={}
+local sheets={}
+for _,piece in testCatalogue do sheets[piece.thumb]=piece.sheet end
 d.image=function(_,path,_,_,style)
-    if path=="art/premades.png" then table.insert(thumbnails,style.uv) end
+    if style and sheets[style.uv] then
+        assert(path==sheets[style.uv],"UV drawn from the wrong sheet")
+        table.insert(thumbnails,style.uv)
+    end
 end
 local function checkPage(first)
     table.clear(thumbnails) step()
@@ -90,7 +95,8 @@ def check_package(package):
         assert archive.testzip() is None
         runtime = json.loads(archive.read("art/catalogue.json"))
         manifest = json.loads(archive.read("reskate-plugin.json"))
-        atlas = Image.open(io.BytesIO(archive.read("art/premades.png"))).convert("RGBA")
+        sheets = {p: Image.open(io.BytesIO(archive.read(p))).convert("RGBA") for p in {entry["sheet"] for entry in runtime}}
+        assert all(max(sheet.size) <= 512 for sheet in sheets.values()), "ReSkate rejects oversized sheets"
         for script in ("plugin/main.lua", "plugin/selector.lua"):
             assert archive.read(script) == (ROOT / script).read_bytes()
     assert [p["id"] for p in source] == [p["id"] for p in runtime]
@@ -111,6 +117,7 @@ def check_package(package):
             assert wall.getbbox(), entry["id"]
             # Locate the tile via the packaged UVs and compare its pixels to the master.
             l, t, r, b = entry["thumb"]
+            atlas = sheets[entry["sheet"]]
             assert 0 <= l < r <= 1 and 0 <= t < b <= 1
             cell = 160
             cx, cy = (l + r) / 2 * atlas.width, (t + b) / 2 * atlas.height

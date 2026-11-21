@@ -33,7 +33,7 @@ reskate.input.cursor=function() return cursor end
 reskate.input.gamepad=function() return {buttons=buttons} end
 reskate.input.key=function(k) return keys[k] end
 reskate.input.text=function() local result=typed or "" typed=nil return result end
-local d={rect=noop,circle=noop,line=noop,image=noop,game_image=noop,gradient=noop,
+local d={rect=noop,circle=noop,line=noop,image=noop,game_image=noop,gradient=noop,poly=noop,world_image=noop,
     world_to_screen=function() return nil end,size=function() return size end,
     text=function(_,_,t) table.insert(labels,t) end}
 local function step() frame(16) table.clear(labels) emit("draw",d) end
@@ -64,6 +64,13 @@ click(90,947) click(370,947) assert(#saved==1 and saved[1].colour==3,"undo erase
 click(221,947) click(370,947) assert(#saved==0,"redo erase failed")
 escape() assert(active=="Graffiti Lab")
 click(180,650) assert(active=="Wall Paint")
+assert(has("40 mm") and has("PAINT SIZE"))
+click(104,488) assert(has("65 mm"))
+key("E") assert(has("ERASE SIZE") and has("160 mm"))
+click(45,488) assert(has("100 mm"))
+key("]") assert(has("160 mm"))
+key("E") assert(has("65 mm"))
+click(72,488) assert(has("40 mm"))
 click(100,267) escape() assert(active=="Graffiti Lab" and has("Ink · 40 mm"))
 click(200,778) assert(active=="Graffiti Lab Studio" and has("Designs   0"))
 click(390,187) assert(has("No local marks on this map yet."))
@@ -129,11 +136,12 @@ def run(luau, checks, name="menu", capture=False, catalogue=None):
         fields = [key + "=" + json.dumps(piece[key], ensure_ascii=False)
                   for key in ("id", "name", "category", "number", "lettering", "colourway") if key in piece]
         fields.append("aspect=" + str(piece.get("aspect", 1)))
+        fields.append("sheet=" + json.dumps(piece.get("sheet", "art/premades.png")))
         fields.append("thumb={" + ",".join(map(str, piece.get("thumb", [0, 0, 1, 1]))) + "}")
         rows.append("{" + ",".join(fields) + "}")
     with TemporaryDirectory() as directory:
         code = [ADAPTER, "local testCatalogue={" + ",\n".join(rows) + "}", HOST]
-        for module in ("dock", "surface", "sharing", "wall_store", "wall_ink", "blackbook", "wall_art", "paint", "studio", "selector", "menu"):
+        for module in ("dock", "surface", "sharing", "wall_store", "wall_ink", "blackbook", "wall_art", "paint", "studio", "imports", "selector", "menu", "spray_fx", "spray_arm"):
             source = (ROOT / "plugin" / (module + ".lua")).read_text(encoding="utf-8")
             code.append(f"modules.{module}=(function()\n{source}\nend)()")
         code.extend([(ROOT / "plugin/main.lua").read_text(encoding="utf-8"), checks])

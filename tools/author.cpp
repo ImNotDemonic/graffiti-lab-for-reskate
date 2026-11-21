@@ -10,6 +10,7 @@
 #include <cmath>
 #include <cstring>
 #include <fstream>
+#include <functional>
 #include <iostream>
 #include <set>
 
@@ -371,12 +372,13 @@ void author_decal(dingosdk::vfs::GameData &data, const fs::path &textures,
   emit(fb::AssetKind::resource, depot_asset, depot);
 }
 
+#include "spray_can.h"
 } // namespace
 int main(int argc, char **argv) {
   try {
-    if (argc < 6 || (argc - 3) % 3 != 0)
+    if (argc < 7 || (argc - 4) % 3 != 0)
       throw std::runtime_error(
-          "usage: decal-author GAME EMPTY_OUTPUT SLOT ID IMAGE.rgba [SLOT ID IMAGE.rgba ...]");
+          "usage: decal-author GAME EMPTY_OUTPUT CAN_PATCH SLOT ID IMAGE.rgba [SLOT ID IMAGE.rgba ...]");
     const fs::path out = argv[2];
     if (!fs::is_directory(out) || !fs::is_empty(out))
       throw std::runtime_error("Expected an empty output directory");
@@ -416,8 +418,10 @@ int main(int argc, char **argv) {
       }
     };
 
+    CanAssets can(argv[1], argv[3]);
+    can.emit_mesh(emit);
     std::set<unsigned> slots;
-    for (int i = 3; i < argc; i += 3) {
+    for (int i = 4; i < argc; i += 3) {
       const auto slot = std::stoul(argv[i]);
       const std::string id = argv[i + 1];
       if (slot > 127 || !slots.insert(static_cast<unsigned>(slot)).second ||
@@ -425,25 +429,11 @@ int main(int argc, char **argv) {
         throw std::runtime_error("Invalid artwork ID or duplicate slot");
       author_decal(data, argv[i + 2], id, static_cast<unsigned>(slot), emit);
     }
-    const auto root_toc =
-        data.read_toc("Win32/levels/game/dingolevel_root/dingolevel_root.toc");
-    const auto root_bundle = data.read_bundle(
-        root_toc, "win32/levels/game/dingolevel_root/dingolevel_root");
-    if (!root_bundle)
-      throw std::runtime_error("Missing root shader lookup bundle");
-    unsigned lookups{};
-    for (std::size_t i = 0; i < root_bundle->manifest.resources.size(); ++i) {
-      auto a = root_bundle->manifest.resources[i];
-      if (a.resourceType != 0xe2e6955b && a.resourceType != 0x2d254a89)
-        continue;
-      ++lookups;
-      auto raw = data.read(*root_bundle->payload(fb::AssetKind::resource, i));
+    can.lookups([&](fb::BundleAsset a, std::vector<std::byte> raw) {
       for (const unsigned slot : slots)
         alias_material(a, raw, 0x9b3233728e841bc0ULL, private_material + slot * 0x100);
       emit(fb::AssetKind::resource, a, raw);
-    }
-    if (lookups != 2)
-      throw std::runtime_error("Expected both root shader lookup tables");
+    });
 
     std::ofstream(out / "resources.json") << Json{{"resources", rows}}.dump(2);
     std::cout << "Authored " << slots.size() << " decals and both shared lookup tables ("

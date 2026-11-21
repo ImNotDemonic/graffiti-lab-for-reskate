@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Import artwork · Graffiti Lab</title>
+<style>
+:root{color-scheme:dark;font:16px/1.5 system-ui;background:#17181a;color:#eceae6}main{max-width:38rem;margin:6vh auto;padding:1.5rem}h1{margin:.2rem 0}button,input{font:inherit}button{background:#ff642d;color:#151515;font-weight:bold;border:0;padding:.65rem 1rem;cursor:pointer}button:disabled{opacity:.45}canvas{display:block;width:100%;height:15rem;object-fit:contain;background:repeating-conic-gradient(#292a2c 0 25%,#323336 0 50%) 0/18px 18px;image-rendering:pixelated;margin:1rem 0}#status{min-height:1.5em}label{display:block;margin:1.2rem 0}
+</style>
+<main><h1>Import artwork</h1><p>Choose a PNG, JPEG or WebP. The preview shows how the 16 wall inks reproduce your image. Transparent areas stay bare.</p>
+<label>Image <input id="file" type="file" accept="image/png,image/jpeg,image/webp"></label>
+<canvas id="preview" aria-label="Wall preview"></canvas>
+<button id="save" disabled>Save artwork…</button><p id="status" role="status"></p>
+<p>Save the <b>.graffiti</b> file beside this importer in the <b>imports</b> folder. In ReSkate, open <b>Premade Art → My imports → Refresh</b>. Your image stays on this computer.</p></main>
+<script>
+"use strict";
+// The plugin inserts the installed wall ink palette before opening this local helper.
+const palette = __WALL_INKS__;
+const rgb = palette.map(hex => [1,3,5].map(i => parseInt(hex.slice(i,i+2),16)));
+function quantise(pixels) {
+  const result = new Uint8Array(pixels.length/4);
+  for (let i=0; i<result.length; ++i) {
+    const p=i*4;
+    if (pixels[p+3]<96) continue;
+    let best=Infinity;
+    for (let c=0; c<rgb.length; ++c) {
+      const [r,g,b]=rgb[c];
+      const distance=2*(r-pixels[p])**2+4*(g-pixels[p+1])**2+(b-pixels[p+2])**2;
+      if (distance<best) { best=distance; result[i]=c+1; }
+    }
+  }
+  return result;
+}
+function rectangles(grid,w,h) {
+  const parts=[];
+  let previous=new Map();
+  for (let y=0; y<h; ++y) {
+    const current=new Map();
+    for (let x=0; x<w;) {
+      const left=x, colour=grid[y*w+x++];
+      while (x<w && grid[y*w+x]===colour) ++x;
+      if (!colour) continue;
+      const key=[left,x,colour].join(',');
+      let part=previous.get(key);
+      if (part) ++part[3];
+      else { part=[left,y,x-left,1,colour]; parts.push(part); }
+      current.set(key,part);
+    }
+    previous=current;
+  }
+  return parts;
+}
+const file=document.querySelector('#file'), canvas=document.querySelector('#preview'),
+      save=document.querySelector('#save'), status=document.querySelector('#status');
+let output, filename, revision=0;
+file.onchange=async () => {
+  const version=++revision, source=file.files[0];
+  output=null; save.disabled=true; canvas.width=1; status.textContent='';
+  if (!source) return;
+  let bitmap;
+  try {
+    bitmap=await createImageBitmap(source);
+    if (version!==revision) return;
+    const {width,height}=bitmap, aspect=width/height;
+    if (aspect>16 || aspect<1/16) throw Error('Crop the image to an aspect ratio within 16:1 or 1:16.');
+    const ctx=canvas.getContext('2d',{willReadFrequently:true});
+    for (const longest of [96,72,48,32,24,16]) {
+      const w=canvas.width=Math.max(1,Math.round(longest*Math.min(1,aspect)));
+      const h=canvas.height=Math.max(1,Math.round(longest*Math.min(1,1/aspect)));
+      ctx.imageSmoothingQuality='high'; ctx.drawImage(bitmap,0,0,w,h);
+      const grid=quantise(ctx.getImageData(0,0,w,h).data), parts=rectangles(grid,w,h);
+      if (parts.length>256) continue;
+      if (!parts.length) throw Error('The image has no visible ink. Choose a more opaque image.');
+      ctx.clearRect(0,0,w,h);
+      for (const [x,y,dx,dy,c] of parts) {ctx.fillStyle=palette[c-1]; ctx.fillRect(x,y,dx,dy);}
+      output=['GLART1 '+[w,h,width,height].join(' '),...parts.map(p=>p.join(' '))].join('\n');
+      filename=(source.name.replace(/\.[^.]+$/,'').replace(/[^a-zA-Z0-9 _-]/g,'').slice(0,48).trim() || 'My artwork')+'.graffiti';
+      save.disabled=false; status.textContent=w+' × '+h+' wall pixels · '+parts.length+' ink shapes'; break;
+    }
+  } catch (err) { if(version===revision) status.textContent=err.message; }
+  finally { if(bitmap) bitmap.close(); }
+};
+save.onclick=async () => {
+  if (!output) return;
+  const blob=new Blob([output],{type:'text/plain'});
+  try {
+    if (window.showSaveFilePicker) {
+      const handle=await showSaveFilePicker({id:'graffiti-lab-imports',suggestedName:filename,
+        types:[{description:'Graffiti Lab artwork',accept:{'text/plain':['.graffiti']}}]});
+      const writer=await handle.createWritable(); await writer.write(blob); await writer.close();
+      status.textContent='Saved. Refresh My imports in ReSkate.';
+    } else {
+      const url=URL.createObjectURL(blob), link=document.createElement('a');
+      link.href=url; link.download=filename; link.click(); setTimeout(()=>URL.revokeObjectURL(url),30000);
+      status.textContent='Move the downloaded .graffiti file into imports, then refresh in ReSkate.';
+    }
+  } catch(err) {if (err.name!=='AbortError') status.textContent=err.message;}
+};
+</script></html>

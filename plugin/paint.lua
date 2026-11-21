@@ -44,6 +44,12 @@ return function(recordSample, undoMark, onBack, usage, eraseAt, saveState, check
     local colour, size, sampleCount, pathLength = 3, 2, 0, 0
     local keys, message = {}, ""
     local toolDown, erasing = false, false
+    local eraseSize=2
+    local function toolSize() return if erasing then eraseSize else size end
+    local function setSize(index)
+        index=math.clamp(index,1,#widths)
+        if erasing then eraseSize=index else size=index end
+    end
 
     local function finish()
         if mark then
@@ -65,7 +71,7 @@ return function(recordSample, undoMark, onBack, usage, eraseAt, saveState, check
     local function add(hit)
         if not hit then lastHit = nil return end
         if erasing then
-            eraseAt(hit,widths[size]*2)
+            eraseAt(hit,widths[eraseSize]*2)
             lastHit=hit
             return
         end
@@ -116,10 +122,16 @@ return function(recordSample, undoMark, onBack, usage, eraseAt, saveState, check
             if i==colour then u.border(x-2,y-2,40,38,dock.blaze) end
             u.text(x+30,y+12,tostring(i),12,if i==2 then dock.ink else dock.dark,"bold","right")
         end
-        u.text(39,426,"SIZE",13,dock.muted,"bold")
-        u.text(39,450,math.round(widths[size]*(if erasing then 4000 else 1000)).." mm",17,dock.ink,"bold")
-        u.text(39,481,"[   /   ]",16,dock.muted,"bold")
+        u.text(39,426,if erasing then "ERASE SIZE" else "PAINT SIZE",13,dock.muted,"bold")
+        u.text(39,450,math.round(widths[toolSize()]*(if erasing then 4000 else 1000)).." mm",17,dock.ink,"bold")
+        for i=1,#widths do
+            local x=39+(i-1)*26
+            u.rect(x,479,24,18,if i<=toolSize() then dock.blaze else "#45464A")
+            if i==toolSize() then u.border(x-1,478,26,20,dock.ink) end
+        end
+        u.text(39,501,"[   /   ]",14,dock.muted,"bold")
         u.text(39,543,"FLOW",13,dock.muted,"bold")
+        u.rect(35,562,85,32,if latched then dock.blaze else "#333437")
         u.text(39,566,if latched then "Toggle" else "Hold",18,dock.ink,"bold")
         local visible,total,why=usage()
         u.text(39,640,"VISIBLE",13,dock.muted,"bold")
@@ -172,13 +184,14 @@ return function(recordSample, undoMark, onBack, usage, eraseAt, saveState, check
         end
         if pressed("Space") and not erasing then latched = not latched end
         local down = latched or cursor.left
-        if previousDown and not down then finish() end
+        local released=previousDown and not down
+        if released then finish() end
         previousDown = down
         if not down then
             if pressed("Z") and reskate.input.key(17) and not erasing and saveState() then message = undoMark() end
-            if pressed("[") then size = math.max(1,size-1) end
-            if pressed("]") then size = math.min(#widths,size+1) end
-            for i=1,8 do if pressed(tostring(i)) then colour=i end end
+            if pressed("[") then setSize(toolSize()-1) end
+            if pressed("]") then setSize(toolSize()+1) end
+            for i=1,8 do if pressed(48+i) then colour=i end end
         end
         local pixel = cursor.position
         local scale = screen.y/1080
@@ -190,7 +203,8 @@ return function(recordSample, undoMark, onBack, usage, eraseAt, saveState, check
             for i=1,8 do
                 if dock.inside(px,py,39+(i-1)%2*40,250+math.floor((i-1)/2)*39,36,34) then colour=i end
             end
-            if dock.inside(px,py,36,476,81,36) then size=math.clamp(size+(if px<76 then -1 else 1),1,#widths) end
+            if dock.inside(px,py,39,473,78,30) then setSize(1+math.floor((px-39)/26)) end
+            if not erasing and dock.inside(px,py,35,562,85,32) then latched=not latched end
             if dock.inside(px,py,35,708,85,38) or dock.inside(px,py,35,754,85,38) then
                 finish()
                 erasing,latched,message=py>=754,false,""
@@ -203,8 +217,10 @@ return function(recordSample, undoMark, onBack, usage, eraseAt, saveState, check
             return
         end
         local focal = screen.y/(2*math.tan(math.rad(view.fov)/2))
-        local width = widths[size]
+        local width = widths[toolSize()]
         if not down then
+            -- The previous hit is sufficient for the release frame. Refresh hover next tick.
+            if released then return end
             hover = brushHit(view,screen,pixel,focal,width)
             return
         end
@@ -217,12 +233,19 @@ return function(recordSample, undoMark, onBack, usage, eraseAt, saveState, check
             steps = math.max(1,math.ceil(vector.magnitude(pixel-lastPixel)/spacing))
             if steps>maxSamples then lastHit, lastPixel, steps = nil, nil, 1 end
         end
+        local started=reskate.time.now()
         for i=1,steps do
             local sample = if lastPixel then lastPixel+(pixel-lastPixel)*(i/steps) else pixel
             hover = brushHit(view,screen,sample,focal,width)
             add(hover)
+            if i<steps and reskate.time.now()-started>=8 then
+                lastPixel=sample
+                if not erasing then return hover,palette[colour] end
+                return
+            end
         end
         lastPixel = pixel
+        if not erasing then return hover,palette[colour] end
     end
 
     return {

@@ -62,7 +62,7 @@ end
 local function drag(n)
     cursor.left=true
     for i=1,n do
-        cursor.position=v(865+math.abs(i%40-20)*10,540,0)
+        cursor.position=v(865+math.abs(i%40-20)*10,460+(i%2)*160,0)
         tick()
     end
     lift()
@@ -129,9 +129,10 @@ tick(12000)
 cursor.position=v(969,540,0) tick()
 lift() status()
 settle(100) status()
-assert(strokes==26 and samples>=nearSamples+3 and visible==samples)
+assert(strokes==26 and samples>=nearSamples+3 and visible>nearSamples)
+local durableRuns=visible
 tick(591000) settle(100) status()
-assert(samples>=nearSamples+3 and visible==samples and rendered==samples,"persistent ink expired")
+assert(samples>=nearSamples+3 and visible==durableRuns and rendered==durableRuns,"persistent ink expired")
 dot() status() local savedSamples=samples
 emit("level_unloading") status()
 assert(rendered==0 and samples==0 and strokes==0 and active==nil)
@@ -139,7 +140,7 @@ settle(10) assert(rendered==0)
 map="levels/game/another" emit("level_loaded",map) settle(3)
 -- An unavailable renderer with zero slots must not interrupt a stroke or lose its colour.
 maxLive=0 openBrush()
-keys["6"]=true tick() keys["6"]=false tick()
+keys[54]=true tick() keys[54]=false tick()
 drag(215) status() assert(samples>192 and visible==0 and strokes==1)
 maxLive=2048 settle(70) status()
 assert(rendered==samples and samples==visible)
@@ -154,8 +155,36 @@ assert(strokes==0 and samples==0 and visible==0 and rendered==1 and live[hostArt
     "joining a session retained private paint or lost the artist's premade")
 emit("level_unloading") settle(2) assert(rendered==0)
 maxLive=2048 online=false map="levels/game/test" emit("level_loaded",map) settle(150) status()
-assert(samples==savedSamples and rendered==samples and strokes==27,string.format("wrong or missing paint on return: %d of %d, %d shown, %d strokes",samples,savedSamples,rendered,strokes))
+assert(samples==savedSamples and rendered==durableRuns+1 and strokes==27,string.format("wrong or missing paint on return: %d of %d, %d shown, %d strokes",samples,savedSamples,rendered,strokes))
 print(string.format("PASS: %d recorded samples, %d concurrent decals, 26 strokes, return to an older wall, shared-pool recovery, artwork placement, undo, lifetime renewal and per-map restoration",allSamples,peak))
 """
 if __name__ == "__main__":
     run(sys.argv[1], CHECKS, "wall_paint")
+    run(sys.argv[1], FILE_HOST + """
+online=false step()
+console.graffiti({"paint"}) step() step()
+cursor.position=v(960,540,0) step()
+cursor.left=true step()
+local picks=0
+local nativePick=reskate.world.pick
+reskate.world.pick=function(...)
+    picks+=1
+    now+=11 -- streaming one receiver consumes this tick's brush sampling allowance
+    return nativePick(...)
+end
+cursor.position=v(1000,540,0) step()
+assert(picks==1,"brush continued interpolating after a slow native hit")
+local function reach()
+    local right=-math.huge
+    for _,row in live do right=math.max(right,row.m[13]+math.abs(row.m[1])/2) end
+    return right
+end
+local stepsBeforeRelease=reach()
+for _=1,8 do step() end
+assert(reach()>stepsBeforeRelease,"deferred samples never caught up to the cursor")
+local beforeRelease=picks
+cursor.left=false step()
+assert(picks==beforeRelease,"brush performed a new wall query on the save/release frame")
+step() assert(picks==beforeRelease+1,"idle hover did not resume")
+print("PASS: slow native wall queries spread across ticks; release and hover recover")
+""", "wall_paint_slow_queries")

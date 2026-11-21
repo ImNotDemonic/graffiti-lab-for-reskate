@@ -4,9 +4,44 @@ local eraseCellSize = 0.5
 local hostLimit = 2048
 local batchSize = 32
 
+-- Rectangular brush stamps overlap by one brush width. Keep all the saved
+-- stamps for erasing, but let a nearly straight stretch share one world decal.
+local function axis(m,i)
+    return vector.create(m[i],m[i+1],m[i+2])
+end
+
+local function join(run,sample,key)
+    if not run or run.cell.key~=key or run.asset~=sample.asset or #run.members>=32 then return end
+    if math.abs(run.width-sample.width)>0.0002 then return end
+    local width=run.width
+    local face=run.face
+    if vector.dot(face,sample.face)<0.999 or vector.magnitude(run.last-sample.start)>width*0.16 then return end
+    local line=sample.finish-run.first
+    if math.abs(vector.dot(line,face))>0.0015 then return end
+    line-=face*vector.dot(line,face)
+    local length=vector.magnitude(line)
+    if length<width*0.2 or length>2 then return end
+    local tangent=line/length
+    local across=vector.cross(tangent,face)
+    -- Check every retained endpoint. A long shallow curve must not gradually
+    -- move away from the original stroke as the endpoint changes.
+    local lastDistance=-width
+    for _,member in run.members do
+        local offset=member.finish-run.first
+        local along=vector.dot(offset,tangent)
+        if math.abs(vector.dot(offset,across))>width*0.18 or along<lastDistance-width*0.12
+            or along>length+width*0.12 then return end
+        lastDistance=along
+    end
+    local x,y,z=tangent*(length+width),face*0.045,across*width
+    local p=(run.first+sample.finish)/2
+    return {x.x,x.y,x.z,0,y.x,y.y,y.z,0,z.x,z.y,z.z,0,p.x,p.y,p.z,1}
+end
+
 return function(fx)
     local ink = {live=0, total=0, strokes=0, limit=hostLimit}
     local cells, live, eraseCells = {}, {}, {}
+    local runCount=0
     local newestCell, lastInput, serial = nil, 0, 0
     local queue, index, nextPlan, nextExpiry = {}, 1, 0, math.huge
     local dirty,lastEye,lastActiveCell=true,nil,nil
@@ -42,17 +77,43 @@ return function(fx)
         return true
     end
 
-    function ink.add(mark,asset,matrix,now,restoring)
-        local position=vector.create(matrix[13],matrix[14],matrix[15])
+    local function renderSample(sample,previous,now,restoring)
+        local position=axis(sample.matrix,13)
         local key=vector.floor(position/cellSize)
+        local matrix=join(previous,sample,key)
+        if matrix then
+            previous.matrix,previous.last=matrix,sample.finish
+            table.insert(previous.members,sample)
+            sample.run=previous
+            if live[previous] then fx.move(live[previous],matrix) end
+            return previous
+        end
         local cell=cells[key]
         if not cell then
             cell={key=key,centre=(key+vector.create(0.5,0.5,0.5))*cellSize}
             cells[key]=cell
         end
         serial+=1
-        local sample={asset=asset,matrix=matrix,cell=cell,older=cell.head,serial=serial,mark=mark,index=#mark.samples+1}
-        local eraseKey=vector.floor(position/eraseCellSize)
+        local run={asset=sample.asset,matrix=sample.matrix,cell=cell,older=cell.head,serial=serial,
+            first=sample.start,last=sample.finish,width=sample.width,face=sample.face,members={sample}}
+        if cell.head then cell.head.newer=run end
+        cell.head=run
+        if not restoring then newestCell,lastInput=cell,now end
+        sample.run=run
+        runCount+=1
+        dirty=true
+        if not restoring and ink.live<ink.limit and now>=retryAt then display(run,now) end
+        return run
+    end
+
+    function ink.add(mark,asset,matrix,now,restoring)
+        local point=axis(matrix,13)
+        local long=axis(matrix,1)
+        local width=vector.magnitude(axis(matrix,9))
+        local half=vector.normalize(long)*math.max(0,(vector.magnitude(long)-width)/2)
+        local sample={asset=asset,matrix=matrix,mark=mark,index=#mark.samples+1,
+            width=width,start=point-half,finish=point+half,face=vector.normalize(axis(matrix,5))}
+        local eraseKey=vector.floor(point/eraseCellSize)
         local bin=eraseCells[eraseKey]
         if not bin then
             bin={key=eraseKey,items={}}
@@ -60,33 +121,37 @@ return function(fx)
         end
         sample.bin,sample.binIndex=bin,#bin.items+1
         table.insert(bin.items,sample)
-        if cell.head then cell.head.newer=sample end
-        cell.head=sample
-        if not restoring then newestCell,lastInput=cell,now end
         if #mark.samples==0 then ink.strokes+=1 end
         table.insert(mark.samples,sample)
         ink.total+=1
-        dirty=true
-        if not restoring and ink.live<ink.limit and now>=retryAt then display(sample,now) end
+        mark.tailRun=renderSample(sample,mark.tailRun,now,restoring)
         return sample
     end
 
-    local function unlink(sample)
-        if live[sample] then hide(sample) end
-        local cell=sample.cell
-        if sample.newer then sample.newer.older=sample.older else cell.head=sample.older end
-        if sample.older then sample.older.newer=sample.newer end
+    local function unlinkRun(run)
+        if not run.cell then return end
+        if live[run] then hide(run) end
+        local cell=run.cell
+        if run.newer then run.newer.older=run.older else cell.head=run.older end
+        if run.older then run.older.newer=run.newer end
         if not cell.head then
             cells[cell.key]=nil
             if newestCell==cell then newestCell=nil end
         end
+        run.cell,run.older,run.newer=nil,nil,nil
+        runCount-=1
+        dirty=true
+        nextPlan=0
+    end
+
+    local function unlinkSample(sample)
         local bin=sample.bin
         local tail=bin.items[#bin.items]
         tail.binIndex=sample.binIndex
         bin.items[sample.binIndex]=tail
         bin.items[#bin.items]=nil
         if #bin.items==0 then eraseCells[bin.key]=nil end
-        sample.cell,sample.older,sample.newer,sample.bin=nil,nil,nil,nil
+        sample.bin=nil
         ink.total-=1
         dirty=true
         nextPlan=0
@@ -95,8 +160,10 @@ return function(fx)
     function ink.remove(mark,forget)
         for _,sample in mark.samples do
             if forget then forget(sample) end
-            unlink(sample)
+            unlinkRun(sample.run)
+            unlinkSample(sample)
         end
+        mark.tailRun=nil
         ink.strokes-=1
         table.clear(mark.samples)
     end
@@ -105,6 +172,7 @@ return function(fx)
     function ink.erase(hit,radius,forget,onEmpty)
         local point=vector.create(hit[13],hit[14],hit[15])
         local face=vector.normalize(vector.create(hit[5],hit[6],hit[7]))
+        local changed={}
         local reach=vector.one*(radius+0.15)
         local lo,hi=vector.floor((point-reach)/eraseCellSize),vector.floor((point+reach)/eraseCellSize)
         for x=lo.x,hi.x do for y=lo.y,hi.y do for z=lo.z,hi.z do
@@ -122,7 +190,8 @@ return function(fx)
                     if dx*dx+dy*dy<=radius*radius then
                         local mark=sample.mark
                         forget(sample)
-                        unlink(sample)
+                        changed[sample.run]=true
+                        unlinkSample(sample)
                         local tail=mark.samples[#mark.samples]
                         tail.index=sample.index
                         mark.samples[sample.index]=tail
@@ -132,6 +201,15 @@ return function(fx)
                 end
             end
         end end end
+        for run in changed do
+            unlinkRun(run)
+            local previous
+            for _,member in run.members do
+                if member.bin then previous=renderSample(member,previous,0,true) else previous=nil end
+            end
+            local mark=run.members[1].mark
+            if mark.tailRun==run then mark.tailRun=previous end
+        end
     end
 
     -- Free slots for a premade or Blackbook preview before the artwork asks the host.
@@ -200,7 +278,7 @@ return function(fx)
             dirty=true
             ink.limit=math.max(0,capacity-reserved)
         end
-        if ink.live==ink.total or now<retryAt then return end
+        if ink.live==runCount or now<retryAt then return end
         if now>=nextPlan then
             local camera=reskate.camera.get()
             if not camera then return end
@@ -224,6 +302,7 @@ return function(fx)
 
     -- Called after fx.clear() invalidates the whole map's handles.
     function ink.reset()
+        runCount=0
         table.clear(cells)
         table.clear(eraseCells)
         table.clear(live)
