@@ -28,3 +28,9 @@ The kiosk initially rejected both aims. The game reported the same generated col
 4. Press Ctrl+R once while idle. The second mark should disappear and Switchback should keep its artwork, position and handle. Press Ctrl+R again to clear the wall.
 
 Coverage is limited to the two surfaces above. Physical gamepad navigation, other named receivers and performance at the 16-mark limit remain untested.
+
+## Expanded catalogue in 0.6.6
+
+ReSkate Studio compiled the 43 supplied designs, the three existing premades and the 16 Blackbook inks for game build `20260929`. The new designs retain the pack numbers, names and aspect ratios. The selector shows nine tiles per page.
+
+The release check compared all 46 packaged thumbnails with their PNG sources and checked their shader bindings. A Luau host exercised every category and page, searched by lettering and pack number, then previewed each design while retaining a confirmed Rail Sigil placement. The host verified that removing the preview left Rail Sigil on the wall. Run `python tests/test_premades.py PATH_TO_LUAU PATH_TO_MOD_ZIP` to repeat it. Visual placement of the new designs in a running game is still unverified.

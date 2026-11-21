@@ -1,6 +1,7 @@
 """Exercise front-door navigation, real screen callbacks and pointer hitboxes in Luau."""
 from pathlib import Path
 from tempfile import TemporaryDirectory
+import json
 import subprocess
 import sys
 
@@ -17,8 +18,7 @@ local size=v(1920,1080,0)
 reskate.package.read_json=function(path)
     if path=="manifest.json" then return {version_number="test"} end
     if path=="art/palette.json" then return table.create(16,"#AA00AA") end
-    return {{id="switchback",name="Switchback",category="Stencil",colourway="Seafoam"},
-        {id="bonehead",name="Bonehead",category="Character",colourway="Blaze"}}
+    return testCatalogue
 end
 reskate.ui={
     screen=function(name) assert(not actions[name]) actions[name]=true end,
@@ -54,7 +54,7 @@ local widgets={button=function() return actionClick end,note=noop}
 actionClick=true nativePage(widgets) emit("menu_changed",{reskate=true}) assert(active==nil)
 emit("menu_changed",{}) step() assert(active=="Graffiti Lab" and has("C U R R E N T   C A N"))
 click(200,420) assert(active=="Premade Art" and has("SWITCHBACK"))
-click(400,270) assert(not has("SWITCHBACK") and has("BONEHEAD"))
+click(212,270) assert(not has("SWITCHBACK") and has("BONEHEAD"))
 click(90,188) typed="no match" step() assert(has("No pieces match.")) key("Enter")
 escape() assert(active=="Graffiti Lab")
 click(200,530) assert(active=="Graffiti Lab Studio" and has("MARKER"))
@@ -94,9 +94,18 @@ size=v(1280,720,0) emit("action","Open Graffiti Lab") step()
 click(180,560) assert(has("DEFAULT KEY"))
 print("PASS: plugin button, both shortcuts, five destinations, search and filters, mouse/controller and Back, editor erase/undo, can settings, map marks, offline gates and 720p hitboxes")
 """
-def run(luau, checks, name="menu", capture=False):
+def run(luau, checks, name="menu", capture=False, catalogue=None):
+    if catalogue is None:
+        catalogue = json.loads((ROOT / "art/catalogue.json").read_text(encoding="utf-8"))
+    rows = []
+    for piece in catalogue:
+        fields = [key + "=" + json.dumps(piece[key], ensure_ascii=False)
+                  for key in ("id", "name", "category", "number", "lettering", "colourway") if key in piece]
+        fields.append("aspect=" + str(piece.get("aspect", 1)))
+        fields.append("thumb={" + ",".join(map(str, piece.get("thumb", [0, 0, 1, 1]))) + "}")
+        rows.append("{" + ",".join(fields) + "}")
     with TemporaryDirectory() as directory:
-        code = [ADAPTER, HOST]
+        code = [ADAPTER, "local testCatalogue={" + ",\n".join(rows) + "}", HOST]
         for module in ("dock", "surface", "sharing", "wall_store", "wall_ink", "blackbook", "wall_art", "paint", "studio", "selector", "menu"):
             source = (ROOT / "plugin" / (module + ".lua")).read_text(encoding="utf-8")
             code.append(f"modules.{module}=(function()\n{source}\nend)()")

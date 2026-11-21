@@ -2,7 +2,7 @@
 
 A ReSkate graffiti mod with premade artwork, custom drawing and surface placement.
 
-Graffiti Lab places saved Blackbook drawings and premade graffiti on walls in offline ReSkate. The premade library includes **Switchback**, a mint arrow stencil, **Birds**, three swifts over a cobalt sun, and **Bonehead**, a skull in a blaze-orange cap.
+Graffiti Lab places saved Blackbook drawings and premade graffiti on walls in offline ReSkate. The premade library contains 46 designs. The supplied pack adds 12 ReSkate lettering pieces, 12 skate culture designs, five characters, eight skate phrases and six experimental works. Bonehead joins the Characters filter. Switchback and Birds are under Stencils.
 
 ## Current status
 
@@ -34,7 +34,7 @@ Open **Insert → Plugins → Graffiti Lab → Open Graffiti Lab**, then press *
 | Ctrl+S | Save the current drawing to Blackbook. **Rename drawing** changes its title. A later save updates the same entry. |
 | Ctrl+B | Open Blackbook. Click a thumbnail to edit, **Place on wall** below it to preview, or **New drawing** for a blank canvas. |
 | Ctrl+Z / Ctrl+Y | Undo or redo a stroke in the editor. Esc closes the screen and keeps the current draft for this session. |
-| Ctrl+L | Open the main menu. In **Premade Art**, search or filter the three pieces, select a thumbnail and choose **Place on Wall** or press Enter to aim. |
+| Ctrl+L | Open the main menu. In **Premade Art**, search by title, lettering or the pack’s three-digit number. Click a category or cycle with Q/E or LB/RB. Browse nine pieces per page with the page buttons, arrow keys or D-pad. Select a thumbnail and choose **Place on Wall** or press Enter to aim. |
 | Ctrl+G | Enter or cancel aim mode using the current design. A translucent preview appears on a suitable wall within eight metres. |
 | Left click / Ctrl+P / controller A | With the library closed, centre the aiming ring on a flat wall within 8 m. When **Wall ready** appears, confirm to place the artwork. Ctrl+R or controller B cancels aiming. |
 | Ctrl+R | Cancel an active preview. When idle, remove the newest confirmed mark. |
@@ -58,7 +58,7 @@ python tools/build_author.py --sdk "C:/dev/ReSkate" --llvm "C:/dev/llvm-mingw"
 python tools/package_mod.py --game "C:/Games/ReSkate" --studio "C:/Tools/ReSkate Studio/reskate_cli.exe"
 ```
 
-The author reads the supported game data and the 512 × 512 RGBA PNGs in `art/catalogue.json`. The builder also generates 16 solid decal textures from `art/palette.json`. Preserve catalogue slots and palette order to keep asset identities and saved colours stable. Both shader lookup tables include all 19 materials. Studio compiles them into `outputs/GraffitiLab-0.6.5.zip`. The GPL offline tools derive from the gBGYo decal recipe and link ReSkate's resource readers. Their source and licence are under `tools/`. [Upstream decal author](https://github.com/gBGYo/ReSkate_blood) · [LLVM-MinGW release](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261117)
+The catalogue in `art/catalogue.json` maps each design to a stable decal slot. The pack’s editable SVGs and transparent PNG masters are grouped by category in `art/premades/`. The builder fits the PNGs into transparent 512 × 512 wall textures at their original proportions and creates a shared thumbnail sheet. Slots 16–31 belong to the 16 Blackbook inks. Keep those slots, the palette order and existing artwork IDs stable. Studio compiles the 46 premades and 16 inks into `outputs/GraffitiLab-0.6.6.zip`. The GPL offline tools derive from the gBGYo decal recipe and link ReSkate's resource readers. Their source and licence are under `tools/`. [Upstream decal author](https://github.com/gBGYo/ReSkate_blood) · [LLVM-MinGW release](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261117)
 
 ## Project documents
 
