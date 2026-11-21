@@ -1,6 +1,6 @@
 # Graffiti Lab project specification
 
-The offline prototype passed its core placement test on a wall in each target map. The table below also records acceptance criteria for broader surface and lifecycle testing. [Build and playtest record](MILESTONE_1.md) · [API findings](API_FINDINGS.md)
+The offline prototype passed its core placement test on a wall in each target map. The three-piece selector also passed its placement-preservation test on both maps. Broader surface and lifecycle checks remain open. [First placement playtest](MILESTONE_1.md) · [Premade selector playtest](MILESTONE_2.md) · [API findings](API_FINDINGS.md)
 
 ## Intended player workflow
 
@@ -36,4 +36,4 @@ Persistent world placements are a separate decision from a persistent artwork li
 
 ## Runtime structure
 
-`plugin/main.lua` owns the Idle → Aiming → Placed interaction, the single decal handle, input and cleanup. `plugin/surface.lua` checks nearby collision and returns a projection transform for a suitable wall. `art/` contains the original image. `tools/` builds its textures and decal resources offline and packages the compiled patch with the Luau plugin. Editor, library and networking modules belong to later milestones.
+`plugin/main.lua` owns the active design, transient preview and ordered list of confirmed marks. Confirming transfers that preview handle to the list. Selecting a different piece releases only the preview. `plugin/selector.lua` draws the Premade Art dock and handles browsing, confirmation and dismissal. `plugin/surface.lua` validates the wall footprint. `art/catalogue.json` and the three PNGs are shared by the selector and offline asset build. `tools/` packages the compiled patch and Luau plugin. Drawing, persistence and networking belong to later milestones.

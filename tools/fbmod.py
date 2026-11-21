@@ -54,7 +54,7 @@ def package(authored, output, version):
     profile = b"Skate"
     header = pack("QIQiB", 0x01005954534f5246, 6, 0, len(payloads), len(profile)) + profile + pack("I", 0)
     details = b"".join(terminated(s) for s in ["Graffiti Lab", "Graffiti Lab", "Gameplay", version,
-                       "Switchback wall decal.", ""])
+                       "Graffiti Lab premade wall decals.", ""])
     body = header + details + pack("I", len(rows)) + b"".join(rows)
     body = body[:12] + pack("Q", len(body)) + body[20:]
     offset = 0

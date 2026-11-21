@@ -3,14 +3,17 @@ local up = vector.create(0, 1, 0)
 local reach = 8
 local size = 0.65
 local tolerance = 0.035
-local kioskPlot = "world/plots/downtown/dtn_plt_14/dtn_plt_14_base_c_arch_foot_mid_01"
+-- These two identifiers were observed on separate visits to the Blue Light Beach kiosk.
+local kioskReceivers = {
+    ["world/plots/downtown/dtn_plt_14/dtn_plt_14_base_c_arch_foot_mid_01"] = true,
+    ["levels/game/bam_levelroot/generated/stairslitepg_agasset_b8e7ee88"] = true,
+}
 
 local function structuralReceiver(object, level)
     if not level or not level.name then return false end
     local name = string.lower(level.name)
     local blueprint = string.lower(object.blueprint or "")
-    -- On returning to San Vansterdam, pick can identify the kiosk's fixed plot.
-    if blueprint == kioskPlot then return name == "levels/game/bam_levelroot/bam_levelroot" end
+    if kioskReceivers[blueprint] then return name == "levels/game/bam_levelroot/bam_levelroot" end
     -- Studio gives the arcade's baked structural collision meshes their own blueprints.
     local map = string.match(blueprint, "^world/custom/([%w_]+)/collision/%d+_str_[%w_]+%.physics_bp$")
     return map ~= nil and string.match(name, "([^/]+)$") == map

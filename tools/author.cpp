@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: GPL-3.0-only
-// Single-image adaptation of gBGYo/ReSkate_blood's decal recipe.
+// Graffiti Lab adaptation of gBGYo/ReSkate_blood's decal recipe.
 // Based on 52b0f130f725ce24cf66fe89ef92b7d69827cd14, modified 2026-11-21.
 #include "Engine/Core/Json/json.h"
 #include "Engine/Resource/cas_codec.h"
@@ -130,7 +130,7 @@ fb::Image read_image(const fs::path &file) {
 }
 template <class Emit>
 void author_decal(dingosdk::vfs::GameData &data, const fs::path &textures,
-                  Emit &output) {
+                  const std::string &id, unsigned slot, Emit &output) {
   constexpr auto donor = "win32/levels/game/bam_levelroot/wproot/wp/s9600_x0z0/"
                          "s200_x500z1100/s100_x450z1150/s50_x425z1175_sublevel";
   constexpr auto stem = "world/materials/decal/graffiti_large_01_4x2m/"
@@ -157,15 +157,13 @@ void author_decal(dingosdk::vfs::GameData &data, const fs::path &textures,
     return data.read(*bundle->payload(kind, index));
   };
   const auto image = read_image(textures);
-  const std::string output_stem =
-      "world/materials/decal/reskate_graffitilab/switchback";
-  const auto color_file = ground_guid(0x10);
-  const auto color_class = ground_guid(0x11);
-  const auto normal_file = ground_guid(0x20);
-  const auto normal_class = ground_guid(0x21);
-  const auto opacity_file = ground_guid(0x30);
-  const auto opacity_class = ground_guid(0x31);
-  const auto material_key = private_material;
+  const unsigned offset = slot * 0x100;
+  const auto guid = [offset](unsigned index) { return ground_guid(offset + index); };
+  const std::string output_stem = "world/materials/decal/reskate_graffitilab/" + id;
+  const auto color_file = guid(0x10), color_class = guid(0x11);
+  const auto normal_file = guid(0x20), normal_class = guid(0x21);
+  const auto opacity_file = guid(0x30), opacity_class = guid(0x31);
+  const auto material_key = private_material + offset;
   struct Binding {
     fb::Guid old_file, old_class, new_file, new_class;
   };
@@ -188,9 +186,9 @@ void author_decal(dingosdk::vfs::GameData &data, const fs::path &textures,
     instance.instanceGuid = klass;
     const auto name = output_stem + suffix;
     field(*instance.object, "Name").data = name;
-    const std::uint64_t rid = normal    ? 0x674c616200ed0023ULL
+    const std::uint64_t rid = offset + (normal    ? 0x674c616200ed0023ULL
                               : opacity ? 0x674c616200ed0025ULL
-                                        : 0x674c616200ed0021ULL;
+                                        : 0x674c616200ed0021ULL);
     field(*instance.object, "Resource").data = ebx::ResourceReference{rid};
     const std::uint32_t width = normal ? 4 : image.width,
                         height = normal ? 4 : image.height;
@@ -215,9 +213,7 @@ void author_decal(dingosdk::vfs::GameData &data, const fs::path &textures,
     if (texture.size() != 180 ||
         get<std::uint32_t>(res_asset.resourceMeta, 0) != 12)
       throw std::runtime_error("Unexpected texture format");
-    const auto chunk = normal    ? ground_guid(0x22)
-                       : opacity ? ground_guid(0x32)
-                                 : ground_guid(0x12);
+    const auto chunk = normal ? guid(0x22) : opacity ? guid(0x32) : guid(0x12);
     put(texture, 12,
         std::uint32_t(
             normal || opacity ? 18 : 20)); // Linear packed data / sRGB color.
@@ -291,9 +287,9 @@ void author_decal(dingosdk::vfs::GameData &data, const fs::path &textures,
   fb::BundleAsset decal_asset;
   auto decal = ebx::read_document(
       read(fb::AssetKind::ebx, std::string(stem) + "_dv", decal_asset));
-  decal.fileGuid = ground_guid(0x40);
+  decal.fileGuid = guid(0x40);
   auto &instance = ground_instance(decal);
-  instance.instanceGuid = ground_guid(0x41);
+  instance.instanceGuid = guid(0x41);
   field(*instance.object, "Name").data = std::string(output_stem) + "_dv";
   field(*instance.object, "ShaderInstanceKey").data =
       std::int64_t(material_key);
@@ -370,17 +366,17 @@ void author_decal(dingosdk::vfs::GameData &data, const fs::path &textures,
     throw std::runtime_error("Parameter cache identity did not change");
   put(depot, block + 8, params_hash);
   depot_asset.name =
-      "world/materials/decal/reskate_graffitilab/shaderblockdepot_switchback";
-  depot_asset.resourceId = 0x674c616200ed0029ULL;
+      "world/materials/decal/reskate_graffitilab/shaderblockdepot_" + id;
+  depot_asset.resourceId = 0x674c616200ed0029ULL + offset;
   emit(fb::AssetKind::resource, depot_asset, depot);
 }
 
 } // namespace
 int main(int argc, char **argv) {
   try {
-    if (argc != 4)
+    if (argc < 6 || (argc - 3) % 3 != 0)
       throw std::runtime_error(
-          "usage: decal-author GAME EMPTY_OUTPUT IMAGE.rgba");
+          "usage: decal-author GAME EMPTY_OUTPUT SLOT ID IMAGE.rgba [SLOT ID IMAGE.rgba ...]");
     const fs::path out = argv[2];
     if (!fs::is_directory(out) || !fs::is_empty(out))
       throw std::runtime_error("Expected an empty output directory");
@@ -393,7 +389,7 @@ int main(int argc, char **argv) {
                .emplace(kind,
                         kind == fb::AssetKind::chunk ? a.guid.string() : a.name)
                .second)
-        return;
+        throw std::runtime_error("Duplicate authored asset: " + a.name);
       const auto file = std::to_string(rows.size()) + ".cas";
       const auto encoded = fb::encode_cas(raw, {argv[1]});
       if (fb::decode_cas(encoded, {argv[1]}) != raw)
@@ -420,7 +416,15 @@ int main(int argc, char **argv) {
       }
     };
 
-    author_decal(data, argv[3], emit);
+    std::set<unsigned> slots;
+    for (int i = 3; i < argc; i += 3) {
+      const auto slot = std::stoul(argv[i]);
+      const std::string id = argv[i + 1];
+      if (slot > 127 || !slots.insert(static_cast<unsigned>(slot)).second ||
+          id.empty() || id.find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789_") != std::string::npos)
+        throw std::runtime_error("Invalid artwork ID or duplicate slot");
+      author_decal(data, argv[i + 2], id, static_cast<unsigned>(slot), emit);
+    }
     const auto root_toc =
         data.read_toc("Win32/levels/game/dingolevel_root/dingolevel_root.toc");
     const auto root_bundle = data.read_bundle(
@@ -434,15 +438,15 @@ int main(int argc, char **argv) {
         continue;
       ++lookups;
       auto raw = data.read(*root_bundle->payload(fb::AssetKind::resource, i));
-      alias_material(a, raw, 0x9b3233728e841bc0ULL, private_material);
+      for (const unsigned slot : slots)
+        alias_material(a, raw, 0x9b3233728e841bc0ULL, private_material + slot * 0x100);
       emit(fb::AssetKind::resource, a, raw);
     }
     if (lookups != 2)
       throw std::runtime_error("Expected both root shader lookup tables");
 
     std::ofstream(out / "resources.json") << Json{{"resources", rows}}.dump(2);
-    std::cout << "Authored one decal, three textures, a shader depot and "
-                 "lookup entries ("
+    std::cout << "Authored " << slots.size() << " decals and both shared lookup tables ("
               << rows.size() << " payloads).\n";
   } catch (const std::exception &error) {
     std::cerr << error.what() << '\n';

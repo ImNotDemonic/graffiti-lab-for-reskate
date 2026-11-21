@@ -1,4 +1,4 @@
-"""Compile one original decal with ReSkate Studio and produce a local mod ZIP."""
+"""Compile the premade decal catalogue with ReSkate Studio and package the client."""
 import argparse
 import hashlib
 import json
@@ -22,7 +22,7 @@ def build(game, studio, author, destination):
     manifest = json.loads((ROOT / "manifest.json").read_text())
     plugin = json.loads((ROOT / "reskate-plugin.json").read_text())
     declaration = plugin["resident"][0]
-    asset, = plugin["effects"]
+    catalogue = json.loads((ROOT / "art/catalogue.json").read_text())
     build_dir = ROOT / "build"
     build_dir.mkdir(exist_ok=True)
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -30,17 +30,25 @@ def build(game, studio, author, destination):
         scratch = Path(temp)
         authored = scratch / "resources"
         authored.mkdir()
-        with Image.open(ROOT / "art/switchback.png") as image:
-            if image.mode != "RGBA" or image.size != (512, 512):
-                raise ValueError("Switchback must be a 512 x 512 RGBA image")
-            (scratch / "art.rgba").write_bytes(image.tobytes())
-            icon = Image.new("RGBA", image.size, "#e3e9da")
-            icon.alpha_composite(image)
-            icon.resize((256, 256), Image.Resampling.LANCZOS).save(scratch / "icon.png")
-        subprocess.run([author, game, authored, scratch / "art.rgba"], check=True)
+        args = [author, game, authored]
+        for piece in catalogue:
+            name = piece["id"]
+            if not name.isascii() or not name.isidentifier():
+                raise ValueError(f"Invalid artwork ID: {name}")
+            with Image.open(ROOT / "art" / f"{name}.png") as image:
+                if image.mode != "RGBA" or image.size != (512, 512):
+                    raise ValueError(f"{name} must be a 512 x 512 RGBA image")
+                pixels = scratch / f"{name}.rgba"
+                pixels.write_bytes(image.tobytes())
+                args.extend([str(piece["slot"]), name, pixels])
+                if name == "switchback":
+                    icon = Image.new("RGBA", image.size, "#e3e9da")
+                    icon.alpha_composite(image)
+                    icon.resize((256, 256), Image.Resampling.LANCZOS).save(scratch / "icon.png")
+        subprocess.run(args, check=True)
         rows = json.loads((authored / "resources.json").read_text())["resources"]
         templates = [r["name"] for r in rows if r.get("root_type") == "EnvironmentDecalVolumeTemplateData"]
-        if templates != [asset] or any(r["target"] != declaration["bundle"] for r in rows):
+        if templates != plugin["effects"] or any(r["target"] != declaration["bundle"] for r in rows):
             raise ValueError("Authored template or target bundle differs from the manifest")
         shaders = {r["name"] for r in rows if r["kind"] == 2 and r["added"]}
         if any(d["name"] not in shaders for d in declaration["shaders"]):
@@ -61,18 +69,18 @@ def build(game, studio, author, destination):
         with ZipFile(scratch / "GraffitiLab.zip", "w", ZIP_DEFLATED) as archive:
             for path in sorted([*payload, patch / ".reskate-studio-patch", patch / "layout.toc"]):
                 archive.write(path, path.relative_to(patch))
-            for path in ("manifest.json", "reskate-plugin.json", "plugin/main.lua", "plugin/surface.lua"):
+            for path in ("manifest.json", "reskate-plugin.json", "plugin/main.lua", "plugin/surface.lua",
+                         "plugin/selector.lua", "art/catalogue.json"):
                 archive.write(ROOT / path, path)
-            archive.writestr("README.md", "# Graffiti Lab 0.1.0\n\n"
-                             "Offline Switchback wall-decal prototype for ReSkate 20261116. "
-                             "Extract this package into Mods/GraffitiLab beside the managed Skate.exe. "
-                             "Start the game and approve the client plugin.\n\n"
-                             "Ctrl+G starts or cancels aiming. Aim at a flat wall within 8 metres. "
-                             "Ctrl+P places a valid preview. Ctrl+R removes it. One mark lasts for this session "
-                             "until removal, a world reset or expiry.\n\n"
-                             "The console also accepts graffiti aim, graffiti place, graffiti remove and graffiti status. "
-                             "Tested on a Blue Light Beach kiosk panel in San Vansterdam and a solid interior wall "
-                             "in Turbo Token Arcade. On a vent, the artwork only appears on the bars.\n")
+            for piece in catalogue:
+                path = f"art/{piece['id']}.png"
+                archive.write(ROOT / path, path)
+            archive.writestr("README.md", "# Graffiti Lab " + manifest["version_number"] + "\n\n"
+                             "Offline premade graffiti for ReSkate 20261116. With the game closed, extract into "
+                             "Mods/GraffitiLab beside Skate.exe, then launch offline and approve the plugin.\n\n"
+                             "Press Ctrl+L to open Premade Art. Click a tile or use Left/Right, then choose Place on Wall "
+                             "or press Enter to aim. Ctrl+P confirms. Ctrl+G toggles aiming. Ctrl+R cancels a "
+                             "preview or removes the last mark. Esc closes the selector.\n")
             archive.write(scratch / "icon.png", "icon.png")
         with ZipFile(scratch / "GraffitiLab.zip") as archive:
             if archive.testzip():
@@ -86,6 +94,7 @@ if __name__ == "__main__":
     parser.add_argument("--game", type=Path, required=True)
     parser.add_argument("--studio", type=Path, required=True)
     parser.add_argument("--author", type=Path, default=ROOT / "build/native/decal-author.exe")
-    parser.add_argument("--out", type=Path, default=ROOT / "outputs/GraffitiLab-0.1.0.zip")
+    parser.add_argument("--out", type=Path)
     args = parser.parse_args()
-    build(args.game, args.studio, args.author, args.out.resolve())
+    version = json.loads((ROOT / "manifest.json").read_text())["version_number"]
+    build(args.game, args.studio, args.author, (args.out or ROOT / f"outputs/GraffitiLab-{version}.zip").resolve())
