@@ -79,20 +79,47 @@ buttons.down=true step() buttons.down=false step()
 buttons.a=true step() buttons.a=false step()
 assert(active=="Premade Art","controller failed to open the first row after wrap")
 click(175,966) assert(active==nil and count()==1 and live[1].alpha==0.45)
-console.graffiti({"place"}) assert(live[1].alpha==1)
-emit("action","Open Graffiti Lab") step() click(200,778)
+buttons.a=true step() step()
+assert(active=="Premade Art" and live[1].alpha==1 and count()==1,"held A failed to return to the selector")
+buttons.a=false step() key("Right") key("Enter")
+assert(active==nil and live[2].asset:find("birds_dv",1,true))
+cursor.left=true keys[1]=true step() step()
+assert(active=="Premade Art" and live[2].alpha==1 and count()==2,"placement click passed through the returned menu")
+cursor.left=false keys[1]=false step()
+escape() assert(active=="Graffiti Lab") click(200,778)
 click(389,185) assert(has("Switchback"),"confirmed mark absent from the gallery map tab")
 escape() escape()
+local originalFiles=reskate.files
+reskate.files={list=function() return {"blackbook-0001.json","blackbook-0002.json","blackbook-0003.json",
+    "blackbook-0004.json","blackbook-0005.json"} end,read=function(file) return file end}
+reskate.json.decode=function(file)
+    return {version=1,name="Drawing "..file:sub(11,14),strokes={{colour=3,size=28,xy={1024,512}}}}
+end
+console.graffiti({"blackbook"}) step() click(470,660)
+assert(has("Drawing 0001") and has("2 / 2"))
+click(120,421) assert(active==nil)
+emit("action","Place Switchback") step()
+assert(active=="Graffiti Lab Studio" and has("Drawing 0001") and has("2 / 2"),"placement lost the saved gallery page")
+escape() assert(active==nil,"a gallery shortcut should return to skating on Back")
+reskate.files=originalFiles
 online=true step() emit("action","Open Graffiti Lab") step()
 click(220,530) assert(active=="Graffiti Lab" and lastToast=="This tool is available offline.")
 click(220,420) assert(active=="Premade Art")
+click(458,267) click(480,757) step()
+assert(has("12 pieces   ·   2 / 2"))
+click(200,965) assert(active==nil)
+focus=v(2,1,20) emit("action","Place Switchback") step()
+assert(active==nil,"a rejected placement should keep aiming")
+focus=v(2,1,0) emit("action","Place Switchback") step()
+assert(active=="Premade Art" and has("12 pieces   ·   2 / 2") and has("ZINE CUT-UP"),
+    "online confirmation lost the category, page or selection")
 emit("level_unloading") step() assert(active==nil)
 emit("level_loaded",map) step()
 console.graffiti({"library"}) step() assert(active=="Premade Art")
 escape() assert(active==nil,"direct library shortcut unexpectedly opened the hub")
 size=v(1280,720,0) emit("action","Open Graffiti Lab") step()
 click(180,560) assert(has("DEFAULT KEY"))
-print("PASS: plugin button, both shortcuts, five destinations, search and filters, mouse/controller and Back, editor erase/undo, can settings, map marks, offline gates and 720p hitboxes")
+print("PASS: menu navigation, offline and online placement returns, held mouse and controller inputs, Blackbook page, editor erase/undo, can settings, map marks and 720p hitboxes")
 """
 def run(luau, checks, name="menu", capture=False, catalogue=None):
     if catalogue is None:

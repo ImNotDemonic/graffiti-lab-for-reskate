@@ -98,11 +98,11 @@ return function(onPlace,onBack,mapMarks)
             reskate.ui.close()
         end
     end
-    local function open(which)
+    local function open(which, galleryPage)
         if not mode then reskate.ui.open(title) end
         pending, rename, stroke, lineStart, held = nil, nil, nil, nil, {mouse = true,padBack=true}
         galleryBack=false
-        if which == "gallery" then gallery(1) else mode, note = "editor", "" end
+        if which == "gallery" then gallery(galleryPage or 1) else mode, note = "editor", "" end
         reskate.log("Opened " .. (if which == "gallery" then "Blackbook" else "Custom Editor"))
     end
     local function back(native)
@@ -348,5 +348,5 @@ return function(onPlace,onBack,mapMarks)
         table.insert(xy,px)
         table.insert(xy,py)
     end)
-    return {open=open, close=close, active=function() return mode~=nil end}
+    return {open=open, resumeGallery=function() open("gallery",page) end, close=close, active=function() return mode~=nil end}
 end

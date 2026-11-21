@@ -64,6 +64,9 @@ assert(has("CROWN TAG"),"lettering search missed a matching design")
 click(506,188) typed="049" step()
 assert(has("RAIL SIGIL") and has("1 piece   ·   1 / 1"))
 key("Enter") click(200,965) console.graffiti({"place"})
+step()
+assert(active=="Premade Art" and has("049") and has("1 piece   ·   1 / 1") and has("RAIL SIGIL"),
+    "confirming lost the premade search or selection")
 local kept=nextHandle
 assert(live[kept].asset:find("pack_049_dv",1,true) and live[kept].alpha==1)
 for _,piece in testCatalogue do

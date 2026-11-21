@@ -36,7 +36,7 @@ Open **Insert → Plugins → Graffiti Lab → Open Graffiti Lab**, then press *
 | Ctrl+Z / Ctrl+Y | Undo or redo a stroke in the editor. Esc closes the screen and keeps the current draft for this session. |
 | Ctrl+L | Open the main menu. In **Premade Art**, search by title, lettering or the pack’s three-digit number. Click a category or cycle with Q/E or LB/RB. Browse nine pieces per page with the page buttons, arrow keys or D-pad. Select a thumbnail and choose **Place on Wall** or press Enter to aim. |
 | Ctrl+G | Enter or cancel aim mode using the current design. A translucent preview appears on a suitable wall within eight metres. |
-| Left click / Ctrl+P / controller A | With the library closed, centre the aiming ring on a flat wall within 8 m. When **Wall ready** appears, confirm to place the artwork. Ctrl+R or controller B cancels aiming. |
+| Left click / Ctrl+P / controller A | Centre the ring on a flat wall within 8 m. When **Wall ready** appears, confirm to place the artwork. Premade Art returns to the same selection, search and page. Blackbook returns to the same gallery page. Choose another piece or press Esc / B to go back. |
 | Ctrl+R | Cancel an active preview. When idle, remove the newest confirmed mark. |
 | Ctrl+I | Open Wall Paint. Hold the left mouse button and move to draw, or tap Space to toggle paint flow. |
 | E | Switch between Paint and Eraser. Drag the eraser over unwanted ink. Use [ / ] for a smaller or larger eraser. Erased sections are saved automatically. |
@@ -58,7 +58,7 @@ python tools/build_author.py --sdk "C:/dev/ReSkate" --llvm "C:/dev/llvm-mingw"
 python tools/package_mod.py --game "C:/Games/ReSkate" --studio "C:/Tools/ReSkate Studio/reskate_cli.exe"
 ```
 
-The catalogue in `art/catalogue.json` maps each design to a stable decal slot. The pack’s editable SVGs and transparent PNG masters are grouped by category in `art/premades/`. The builder fits the PNGs into transparent 512 × 512 wall textures at their original proportions and creates a shared thumbnail sheet. Slots 16–31 belong to the 16 Blackbook inks. Keep those slots, the palette order and existing artwork IDs stable. Studio compiles the 46 premades and 16 inks into `outputs/GraffitiLab-0.6.6.zip`. The GPL offline tools derive from the gBGYo decal recipe and link ReSkate's resource readers. Their source and licence are under `tools/`. [Upstream decal author](https://github.com/gBGYo/ReSkate_blood) · [LLVM-MinGW release](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261117)
+The catalogue in `art/catalogue.json` maps each design to a stable decal slot. The pack’s editable SVGs and transparent PNG masters are grouped by category in `art/premades/`. The builder fits the PNGs into transparent 512 × 512 wall textures at their original proportions and creates a shared thumbnail sheet. Slots 16–31 belong to the 16 Blackbook inks. Keep those slots, the palette order and existing artwork IDs stable. Studio compiles the 46 premades and 16 inks into `outputs/GraffitiLab-0.6.7.zip`. The GPL offline tools derive from the gBGYo decal recipe and link ReSkate's resource readers. Their source and licence are under `tools/`. [Upstream decal author](https://github.com/gBGYo/ReSkate_blood) · [LLVM-MinGW release](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261117)
 
 ## Project documents
 

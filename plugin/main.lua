@@ -16,6 +16,7 @@ local scopeCheck = 0
 local lastScopeWorld,lastScopeMap
 local nextMarkExpiry=math.huge
 local selected, aiming, preview = 1, false, nil
+local returnToBrowser
 local design = pieces[selected]
 local placed = {}
 local restoredStrokes={}
@@ -71,6 +72,11 @@ local function discardPreview()
     preview, assetError = nil, nil
 end
 
+local function stopAiming()
+    discardPreview()
+    aiming, returnToBrowser = false, nil
+end
+
 local function reset()
     openAfterMenu, fromHome, pendingHome = false,false,false
     menu.close()
@@ -83,6 +89,7 @@ local function reset()
     artHandles=0
     table.clear(placed)
     aiming, preview, sinceSample, elapsed, assetError = false, nil, 0, 0, nil
+    returnToBrowser = nil
     if selector then selector.close() end
     studio.close()
     scopeCheck,nextMarkExpiry=0,math.huge
@@ -101,8 +108,7 @@ local function changeConnection(world, map)
     fromHome,pendingHome=false,false
     menu.close()
     sharing.reset()
-    discardPreview()
-    aiming=false
+    stopAiming()
     selector.close()
     studio.close()
     paint.close()
@@ -190,11 +196,12 @@ local function updatePreview()
     return true
 end
 
-local function aim(piece)
+local function aim(piece, onPlaced)
     if not ready() then return end
     if design ~= piece then discardPreview() end
-    fromHome,pendingHome=false,false
-    design, aiming = piece, true
+    if not onPlaced then fromHome=false end
+    pendingHome=false
+    design, aiming, returnToBrowser = piece, true, onPlaced
     showAimControls, confirmHeld, cancelHeld = false, true, true
     local start = os.clock()
     local visible = updatePreview()
@@ -211,7 +218,7 @@ studio = makeStudio(function(file,doc)
     if not parts then return false,resolution end
     if artHandles+#parts > handleBudget or artworkCount() >= capacity then return false,"Remove a wall mark first." end
     studio.close()
-    aim({id=file,name=doc.name,parts=parts,resolution=resolution,width=wallArt.width,height=wallArt.height})
+    aim({id=file,name=doc.name,parts=parts,resolution=resolution,width=wallArt.width,height=wallArt.height},studio.resumeGallery)
     return true
 end, backToHome, function(index)
     if not index then return #placed end
@@ -249,21 +256,19 @@ local function openPaint()
     if sessionActive then return end
     selector.close()
     studio.close()
-    discardPreview()
-    aiming = false
+    stopAiming()
     paint.open()
 end
 local function openStudio(which)
     if sessionActive then return end
     paint.close()
     selector.close()
-    discardPreview()
-    aiming=false
+    stopAiming()
     studio.open(which)
 end
 selector = makeSelector(pieces, function(index)
     selected = index
-    aim(pieces[index])
+    aim(pieces[index],selector.resume)
 end, backToHome)
 
 local function place()
@@ -280,14 +285,15 @@ local function place()
     nextMarkExpiry=math.min(nextMarkExpiry,preview.expires)
     if sessionActive then sharing.changed() end
     reskate.log("Placed " .. preview.id .. " handle " .. preview.handles[1] .. " (" .. #preview.handles .. " decals)")
-    preview, aiming = nil, false
+    local reopen = returnToBrowser
+    preview, aiming, returnToBrowser = nil, false, nil
     reskate.ui.toast("Placed " .. design.name)
+    if reopen then reopen() end
 end
 
 local function remove()
     if aiming then
-        discardPreview()
-        aiming = false
+        stopAiming()
     elseif #placed > 0 then
         local piece=placed[#placed]
         local details=if piece.samples then #piece.samples.." paint samples" else "handle "..piece.handles[1].." ("..#piece.handles.." decals)"
@@ -343,8 +349,7 @@ local function openLibrary()
     openAfterMenu = false
     paint.close()
     studio.close()
-    discardPreview()
-    aiming=false
+    stopAiming()
     selector.open(selected)
     reskate.log("Opened Premade Art")
 end
@@ -360,8 +365,7 @@ local function openHome()
     selector.close()
     studio.close()
     paint.close()
-    discardPreview()
-    aiming=false
+    stopAiming()
     openAfterMenu,pendingHome,fromHome=false,false,true
     menu.open("home")
     reskate.log("Opened Graffiti Lab main menu")

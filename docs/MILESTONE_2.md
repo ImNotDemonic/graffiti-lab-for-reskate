@@ -33,4 +33,6 @@ Coverage is limited to the two surfaces above. Physical gamepad navigation, othe
 
 ReSkate Studio compiled the 43 supplied designs, the three existing premades and the 16 Blackbook inks for game build `20260929`. The new designs retain the pack numbers, names and aspect ratios. The selector shows nine tiles per page.
 
-The release check compared all 46 packaged thumbnails with their PNG sources and checked their shader bindings. A Luau host exercised every category and page, searched by lettering and pack number, then previewed each design while retaining a confirmed Rail Sigil placement. The host verified that removing the preview left Rail Sigil on the wall. Run `python tests/test_premades.py PATH_TO_LUAU PATH_TO_MOD_ZIP` to repeat it. Visual placement of the new designs in a running game is still unverified.
+The release check compared all 46 packaged thumbnails with their PNG sources and checked their shader bindings. A Luau host exercised every category and page, searched by lettering and pack number, then previewed each design while retaining a confirmed Rail Sigil placement. The host verified that removing the preview left Rail Sigil on the wall. Run `python tests/test_premades.py PATH_TO_LUAU PATH_TO_MOD_ZIP` to repeat it.
+
+On 21 November 2026, the project owner tested the new premade artwork in ReSkate and confirmed it worked.

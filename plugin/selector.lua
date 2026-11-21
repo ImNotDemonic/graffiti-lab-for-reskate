@@ -153,10 +153,13 @@ return function(pieces,onChoose,onBack)
         end
         if accept and #visible>0 then close() onChoose(visible[focus]) end
     end)
-    return {open=function(index)
-        category,query,typing=1,"",false
-        filter(index)
-        open,held=true,{click=true,accept=true,back=true}
+    local function resume()
+        open,typing,held=true,false,{click=true,accept=true,back=true}
         reskate.ui.open(title)
-    end,close=close,active=function() return open end}
+    end
+    return {open=function(index)
+        category,query=1,""
+        filter(index)
+        resume()
+    end,resume=resume,close=close,active=function() return open end}
 end
