@@ -1,0 +1,25 @@
+{
+  "api": 1,
+  "side": "client",
+  "entry": "plugin/main.lua",
+  "permissions": ["camera", "world.raycast", "effects", "input", "session.read", "console", "ui.screen", "overlay"],
+  "effects": [
+    "world/materials/decal/reskate_graffitilab/switchback_dv",
+    "world/materials/decal/reskate_graffitilab/birds_dv",
+    "world/materials/decal/reskate_graffitilab/bonehead_dv"
+  ],
+  "resident": [{
+    "bundle": "win32/levels/game/dingolevel_root/dingolevel_root",
+    "roots": ["world/materials/decal/reskate_graffitilab/"],
+    "shaders": [{
+      "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_switchback",
+      "roots": ["world/materials/decal/reskate_graffitilab/switchback_dv"]
+    }, {
+      "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_birds",
+      "roots": ["world/materials/decal/reskate_graffitilab/birds_dv"]
+    }, {
+      "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_bonehead",
+      "roots": ["world/materials/decal/reskate_graffitilab/bonehead_dv"]
+    }]
+  }]
+}

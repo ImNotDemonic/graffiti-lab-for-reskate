@@ -1,0 +1,34 @@
+# Local feasibility reports, report renders and working files
+/outputs/
+/work/
+
+# Reproducible build intermediates and release archives made in these directories
+/build/
+/dist/
+
+# Tool caches and local Python environments used by offline authoring tools
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+/.cache/
+/.venv/
+
+# Editor, OS and temporary files
+/.vs/
+*.swp
+*.tmp
+*~
+.DS_Store
+Thumbs.db
+
+# Local credentials and machine-specific settings. Keep example configs trackable.
+.env
+.env.*
+!.env.example
+!.env.sample
+/secrets.local/
+/credentials.local.json
+/settings.local.json
+
+# Keep Luau, manifests, original art, recipes and required package inputs trackable.
