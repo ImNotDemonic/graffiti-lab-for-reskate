@@ -112,7 +112,7 @@ def build(game, studio, author, destination):
             for path in ("manifest.json", "reskate-plugin.json", "plugin/main.lua", "plugin/surface.lua",
                          "plugin/dock.lua", "plugin/menu.lua", "art/menu-type.png", "plugin/selector.lua", "plugin/blackbook.lua", "plugin/studio.lua",
                          "plugin/wall_art.lua", "plugin/wall_store.lua", "plugin/wall_ink.lua", "plugin/paint.lua", "plugin/sharing.lua",
-                         "art/palette.json", "art/checker.png"):
+                         "art/palette.json", "art/checker.png", "LICENSE", "art/NOTICE.md"):
                 archive.write(ROOT / path, path)
             archive.write(scratch / "catalogue.json", "art/catalogue.json")
             archive.write(scratch / "premades.png", "art/premades.png")
@@ -135,7 +135,11 @@ def build(game, studio, author, destination):
                              "to toggle continuous flow. Use 1-8 for colour, [ and ] for width, Ctrl+Z to undo a stroke "
                              "and Esc to put the brush away. Keep drawing across the wall with no stroke or stamp count limit. "
                              "Wall Paint saves automatically for each map. Select Eraser or press E and drag to erase ink. "
-                             "When the renderer fills, the brush prioritises nearby and recent ink.\n")
+                             "When the renderer fills, the brush prioritises nearby and recent ink.\n\n"
+                             "## License\n\n"
+                             "Graffiti Lab code is licensed under GPL-3.0-only. The included artwork is rights reserved. "
+                             "See LICENSE and art/NOTICE.md in this ZIP. "
+                             "[Source code](https://github.com/ImNotDemonic/graffiti-lab-for-reskate)\n")
             archive.write(scratch / "icon.png", "icon.png")
         with ZipFile(scratch / "GraffitiLab.zip") as archive:
             if archive.testzip():

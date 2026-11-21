@@ -60,6 +60,12 @@ python tools/package_mod.py --game "C:/Games/ReSkate" --studio "C:/Tools/ReSkate
 
 The catalogue in `art/catalogue.json` maps each design to a stable decal slot. The pack’s editable SVGs and transparent PNG masters are grouped by category in `art/premades/`. The builder fits the PNGs into transparent 512 × 512 wall textures at their original proportions and creates a shared thumbnail sheet. Slots 16–31 belong to the 16 Blackbook inks. Keep those slots, the palette order and existing artwork IDs stable. Studio compiles the 46 premades and 16 inks into `outputs/GraffitiLab-0.6.7.zip`. The GPL offline tools derive from the gBGYo decal recipe and link ReSkate's resource readers. Their source and licence are under `tools/`. [Upstream decal author](https://github.com/gBGYo/ReSkate_blood) · [LLVM-MinGW release](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261117)
 
+## License
+
+Graffiti Lab's source code, including the Luau plugin, tests and build scripts, is licensed under the GNU General Public License, version 3 only (`GPL-3.0-only`). The adapted build tools retain their upstream notices. [Code license](LICENSE)
+
+The bundled artwork is rights reserved. Players may use it in ReSkate as part of Graffiti Lab. Reusing or redistributing the artwork separately requires permission from the relevant rights holder. [Artwork notice](art/NOTICE.md)
+
 ## Project documents
 
 - [Project specification](docs/PROJECT_SPEC.md) defines the player workflow, milestones and prototype acceptance tests.
