@@ -8,7 +8,7 @@ local function tilePosition(slot)
     return 36+(slot-1)%columns*166, 355+math.floor((slot-1)/columns)*125
 end
 
-return function(pieces,onChoose,onBack)
+return function(pieces,onChoose,onBack,organise)
     local stockCount=#pieces
     local importMessage,nextRead=nil,0
     local categories,searchText={},{}
@@ -93,6 +93,7 @@ return function(pieces,onChoose,onBack)
         end
         u.header(title)
         if not reskate.session.active() then
+            u.rect(36,122,202,32,"#38393B") u.text(48,128,"ARTWORK LIBRARY",15,dock.ink,"bold")
             u.rect(309,82,112,38,"#38393B")
             u.text(365,92,"IMPORT ART",14,dock.ink,"bold","centre")
             u.rect(426,82,102,38,"#38393B")
@@ -194,6 +195,7 @@ return function(pieces,onChoose,onBack)
             local x,y=cursor.position.x/scale,cursor.position.y/scale
             if dock.inside(x,y,36,32,66,33) then back() return end
             if not reskate.session.active() then
+                if organise and dock.inside(x,y,36,122,202,32) then close() organise() return end
                 if dock.inside(x,y,309,82,112,38) then openImporter() return end
                 if dock.inside(x,y,426,82,102,38) then refresh(true,visible[focus]) return end
             end

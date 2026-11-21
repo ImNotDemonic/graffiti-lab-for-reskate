@@ -64,7 +64,7 @@ key("E") assert(has("WALL PAINT   /   FREEHAND"),"E did not switch back to paint
 visit(city) assert(count()==0,"different maps with the same basename shared paint")
 brush() key(54) dotAt(960,710)
 visit(arcade)
-l,m,r,o,a=inspect() assert(l>0 and m==0 and r>0 and o==1 and a==0,"map return lost the erased gap")
+l,m,r,o,a=inspect() assert(l>0 and m==0 and r>0 and o==1 and a==1,"map return lost the erased gap")
 online=true step() assert(count()==0,"private ink was shown online")
 online=false for _=1,50 do step() end
 l,m,r,o=inspect() assert(l>0 and m==0 and r>0 and o==1,"offline return lost paint")
@@ -84,16 +84,18 @@ for _=1,170 do step() end
 local _,_,_,cityInk=inspect() assert(cityInk==1)
 visit(arcade) brush()
 keys[17]=true key("Z") keys[17]=false step()
-assert(count()==0,"undo after restore did not remove the partly erased stroke")
+assert(count()==1 and select(5,inspect())==1,"undo after restore did not remove the partly erased stroke")
 export()
 """
 
 VERIFY = """
-visit(arcade) assert(count()==0,"erased or undone strokes reappeared after restart")
+visit(arcade) assert(count()==1 and select(5,inspect())==1,"erased or undone strokes reappeared after restart")
 visit(city)
 local l,m,r,o,a=inspect() assert(l+m+r==0 and o==1 and a==0,"editing arcade changed city ink")
 -- Preserve an unknown file version. Painting must not overwrite the file.
-local path=next(disk)
+local path
+for p in disk do if p:match("^wall%-paint/") then path=p end end
+assert(path)
 local damaged="GLW2"..disk[path]:sub(5)
 disk[path]=damaged
 visit(city) brush() dotAt(800,420) emit("unload")
@@ -165,8 +167,9 @@ if __name__ == "__main__":
     run(luau, RUNS, "wall_paint_runs")
     run(luau, GEOMETRY, "wall_eraser_faces")
     files = restart(luau, CREATE, {})
-    assert len(files) == 2
+    assert sum(p.startswith("wall-paint/") for p in files) == 2
+    assert sum(p.startswith("placements/") for p in files) == 1
     edited = restart(luau, EDIT, files)
-    assert len(edited) == 1
+    assert sum(p.startswith("wall-paint/") for p in edited) == 1
     restart(luau, VERIFY, edited)
     print("PASS: three fresh Luau processes, per-map paint, partial and full erasure, adjacent ink, premade isolation, undo, failed-save retry and damaged-file protection")

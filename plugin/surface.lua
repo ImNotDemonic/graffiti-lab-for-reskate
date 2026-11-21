@@ -19,7 +19,7 @@ local function structuralReceiver(object, level)
     return map ~= nil and string.match(name, "([^/]+)$") == map
 end
 
-return function(world, view, currentLevel, width, height)
+return function(world, view, currentLevel, width, height, angle)
     if not view then return nil end
     width, height = width or size, height or size
     local origin, forward = view.position, view.forward
@@ -47,6 +47,8 @@ return function(world, view, currentLevel, width, height)
 
     local right = vector.normalize(vector.cross(up, normal))
     local down = vector.cross(right, normal)
+    local c,s=math.cos(math.rad(angle or 0)),math.sin(math.rad(angle or 0))
+    right,down=right*c+down*s,down*c-right*s
     for x = -1, 1, 2 do
         for z = -1, 1, 2 do
             local corner = centre + right * (x * width / 2) + down * (z * height / 2)

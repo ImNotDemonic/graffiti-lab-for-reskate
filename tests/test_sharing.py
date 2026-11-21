@@ -69,6 +69,8 @@ local function panel() return {close=noop,open=noop,active=function() return fal
 modules.paint,modules.selector,modules.studio,modules.menu,modules.wall_art=panel,panel,panel,panel,{}
 """
 
+ADAPTER += (ROOT / "tests/storage_fixture.luau").read_text(encoding="utf-8")
+
 ARTIST = """
 -- A real lobby already has its own world, but active() is false until its first handshake.
 online=false
@@ -173,7 +175,7 @@ online=false
 local allowed, mouseDown = true, true
 local pad = {buttons={a=true,b=false}}
 reskate.input.allowed=function() return allowed end
-reskate.input.key=function(code) assert(code==1) return mouseDown end
+reskate.input.key=function(code) return code==1 and mouseDown end
 reskate.input.gamepad=function() return pad end
 local labels={}
 local draw={size=function() return v(1920,1080,0) end,rect=noop,circle=noop,
@@ -217,7 +219,7 @@ print("PASS: aim prompt, invalid wall, held controls, menu input, mouse placemen
 
 def run(luau, directory, name, script):
     modules = []
-    for module in ("surface", "sharing", "wall_store", "wall_ink", "spray_fx", "spray_arm"):
+    for module in ("playback", "media_format", "library", "placements", "surface", "sharing", "wall_codec", "wall_store", "wall_ink", "spray_fx", "spray_arm"):
         code = (ROOT / "plugin" / (module + ".lua")).read_text(encoding="utf-8")
         modules.append(f"modules.{module}=(function()\n{code}\nend)()")
     main = (ROOT / "plugin/main.lua").read_text(encoding="utf-8")

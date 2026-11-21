@@ -1,3 +1,4 @@
+local codec=require("wall_codec")
 -- Wall strokes own their samples. ReSkate handles are a disposable view of them.
 local cellSize = 8
 local eraseCellSize = 0.5
@@ -6,16 +7,21 @@ local batchSize = 32
 
 -- Rectangular brush stamps overlap by one brush width. Keep all the saved
 -- stamps for erasing, but let a nearly straight stretch share one world decal.
+-- Fixed slots keep the large per-stamp index in Luau's compact array storage.
+-- Public fields retain their names for the page writer and eraser.
+local slots={mark=1,index=2,bin=3,binIndex=4,run=5,finish=6,page=7,slot=8,matrix=9,asset=10}
+local sampleType={
+    __index=function(s,k) return rawget(s,slots[k]) end,
+    __newindex=function(s,k,v) rawset(s,assert(slots[k]),v) end,
+}
 local function axis(m,i)
     return vector.create(m[i],m[i+1],m[i+2])
 end
 
-local function join(run,sample,key)
-    if not run or run.cell.key~=key or run.asset~=sample.asset or #run.members>=32 then return end
-    if math.abs(run.width-sample.width)>0.0002 then return end
-    local width=run.width
-    local face=run.face
-    if vector.dot(face,sample.face)<0.999 or vector.magnitude(run.last-sample.start)>width*0.16 then return end
+local function join(run,sample,key,asset,width,face,start)
+    if not run or run.cell.key~=key or run.asset~=asset or #run.members>=32 then return end
+    if math.abs(run.width-width)>0.0002 then return end
+    if vector.dot(face,run.face)<0.999 or vector.magnitude(run.last-start)>width*0.16 then return end
     local line=sample.finish-run.first
     if math.abs(vector.dot(line,face))>0.0015 then return end
     line-=face*vector.dot(line,face)
@@ -77,10 +83,21 @@ return function(fx)
         return true
     end
 
-    local function renderSample(sample,previous,now,restoring)
-        local position=axis(sample.matrix,13)
-        local key=vector.floor(position/cellSize)
-        local matrix=join(previous,sample,key)
+    local function geometry(sample)
+        if sample.matrix then return sample.asset,sample.matrix end
+        local _,asset,m=codec.unpack(sample.page.rows[sample.slot])
+        return asset,m
+    end
+    local function renderSample(sample,previous,now,restoring,asset,m)
+        if not m then asset,m=geometry(sample) end
+        local point=axis(m,13)
+        local long=axis(m,1)
+        local width=vector.magnitude(axis(m,9))
+        local half=vector.normalize(long)*math.max(0,(vector.magnitude(long)-width)/2)
+        local start,face=point-half,vector.normalize(axis(m,5))
+        sample.finish=point+half
+        local key=vector.floor(point/cellSize)
+        local matrix=join(previous,sample,key,asset,width,face,start)
         if matrix then
             previous.matrix,previous.last=matrix,sample.finish
             table.insert(previous.members,sample)
@@ -94,8 +111,8 @@ return function(fx)
             cells[key]=cell
         end
         serial+=1
-        local run={asset=sample.asset,matrix=sample.matrix,cell=cell,older=cell.head,serial=serial,
-            first=sample.start,last=sample.finish,width=sample.width,face=sample.face,members={sample}}
+        local run={asset=asset,matrix=m,cell=cell,older=cell.head,serial=serial,
+            first=start,last=sample.finish,width=width,face=face,members={sample}}
         if cell.head then cell.head.newer=run end
         cell.head=run
         if not restoring then newestCell,lastInput=cell,now end
@@ -108,11 +125,9 @@ return function(fx)
 
     function ink.add(mark,asset,matrix,now,restoring)
         local point=axis(matrix,13)
-        local long=axis(matrix,1)
-        local width=vector.magnitude(axis(matrix,9))
-        local half=vector.normalize(long)*math.max(0,(vector.magnitude(long)-width)/2)
-        local sample={asset=asset,matrix=matrix,mark=mark,index=#mark.samples+1,
-            width=width,start=point-half,finish=point+half,face=vector.normalize(axis(matrix,5))}
+        -- The GLW1 page owns the source transform after the sample is stored.
+        local sample=setmetatable(table.create(10),sampleType)
+        sample.mark,sample.index,sample.asset,sample.matrix=mark,#mark.samples+1,asset,matrix
         local eraseKey=vector.floor(point/eraseCellSize)
         local bin=eraseCells[eraseKey]
         if not bin then
@@ -124,7 +139,7 @@ return function(fx)
         if #mark.samples==0 then ink.strokes+=1 end
         table.insert(mark.samples,sample)
         ink.total+=1
-        mark.tailRun=renderSample(sample,mark.tailRun,now,restoring)
+        mark.tailRun=renderSample(sample,mark.tailRun,now,restoring,asset,matrix)
         return sample
     end
 
@@ -180,7 +195,7 @@ return function(fx)
             if not bin then continue end
             for i=#bin.items,1,-1 do
                 local sample=bin.items[i]
-                local m=sample.matrix
+                local _,m=geometry(sample)
                 local offset=point-vector.create(m[13],m[14],m[15])
                 local n=vector.normalize(vector.create(m[5],m[6],m[7]))
                 if vector.dot(offset,offset)<(radius+0.15)^2 and vector.dot(face,n)>0.95 and math.abs(vector.dot(offset,n))<0.012 then

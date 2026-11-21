@@ -4,6 +4,15 @@ A ReSkate graffiti mod with premade artwork, custom drawing and surface placemen
 
 Graffiti Lab places saved Blackbook drawings and premade graffiti on walls in offline ReSkate. The premade library contains 46 designs. The supplied pack adds 12 ReSkate lettering pieces, 12 skate culture designs, five characters, eight skate phrases and six experimental works. Bonehead joins the Characters filter. Switchback and Birds are under Stencils.
 
+## 0.8.0 development build
+
+**Public Artworks** uses the Graffiti Lab sidebar. Browse real thumbnails, select a piece for a larger preview, and download it to **Premade Art → My imports**. Animated pieces use their first frame on browse cards.
+
+- **Premade Art → Artwork Library** brings together favourites, folders, search, recents, imports and saved drawings. Use **Edit placements on this map** to move, duplicate, resize or remove a saved offline placement.
+- **Custom Editor → Tiles and symmetry** adds repeating tiles and mirrored or rotational strokes. **Frames and sound** edits short loops and sets a positional sound. Use **Ctrl+J** near interactive artwork.
+- **Artwork Library → Take an in-game photo** captures the current view after four seconds. Open the local image preparer to crop, rotate, remove a border, reshape a piece or turn a photo into poster, stencil, comic or halftone art. Save the new file in imports and refresh My imports.
+- Wall paint uses less memory for the same saved strokes. Older drawings and wall-paint pages still load. Advanced drawing edits preserve a recovery copy when upgrading the save format.
+
 ## Public gallery test build
 
 Open **Graffiti Lab → Public Artworks** on a loaded map. Browse, preview and download static art. The Publish tab accepts a selected local GLART1 import or saved Blackbook drawing. A creator key enables publishing, authenticated downloads, reports and owner unpublishing. Downloaded copies remain available through Premade Art offline. [Service and account setup](service/gallery/README.md)

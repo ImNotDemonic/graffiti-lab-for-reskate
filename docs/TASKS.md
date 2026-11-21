@@ -13,3 +13,7 @@ The [specification](PROJECT_SPEC.md) defines the pass conditions. Update [API fi
 9. [ ] **Verify reuse on an independent installation.** Download the test piece on a second PC. Restart that client without gallery access and place the downloaded copy from My imports.
 
 The [extension plan and feature status](EXTENSION.md) tracks save compatibility, library and placement editing, creative tools, paint capacity, media and the cross-session gallery.
+
+## 0.8.0 qualification
+
+The [feature status and reproducible checks](EXTENSION.md#080-development-build) cover all roadmap features. The open game checks are two-map placement and media playback, the photo-to-wall round trip, and a clean second installation downloading media and placing it offline. Public gallery cards, source compatibility and the 100,000-sample paint test have targeted regressions.

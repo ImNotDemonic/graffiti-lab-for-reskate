@@ -12,8 +12,9 @@ local function label(value,limit)
     return type(value)=="string" and #value<=limit and not value:find("%c")
 end
 function gallery.row(item)
-    return type(item)=="table" and artId(item.id) and label(item.title,256) and label(item.creator,192)
-        and label(item.description,960) and type(item.thumbnail)=="string" and imports.decode(item.thumbnail)~=nil
+    if type(item)~="table" or not artId(item.id) or not label(item.title,256) or not label(item.creator,192)
+        or not label(item.description,960) or type(item.thumbnail)~="string" then return nil end
+    return imports.decode(item.thumbnail)
 end
 function gallery.profiles()
     local found={}
@@ -66,14 +67,18 @@ function gallery.browse(query,page,callback)
     gallery.request("browse?q="..escaped.."&page="..page,nil,nil,function(data,why)
         if not data then callback(nil,why) return end
         if type(data.items)~="table" or #data.items>8 then callback(nil,"Unsupported gallery response") return end
-        for _,item in data.items do if not gallery.row(item) then callback(nil,"Invalid gallery entry") return end end
+        for _,item in data.items do
+            local parts,aspect=gallery.row(item)
+            if not parts then callback(nil,"Invalid gallery entry") return end
+            item.preview={parts=parts,aspect=aspect}
+        end
         callback(data)
     end)
 end
 function gallery.sources()
     local out={}
     for _,piece in imports.list() do
-        if not piece.downloaded then table.insert(out,{name=piece.name,file=piece.file,kind="import"}) end
+        if not piece.downloaded then table.insert(out,{name=piece.name,file=piece.file,index=piece.index,kind="import"}) end
     end
     for _,file in book.list() or {} do
         table.insert(out,{name=file,file=file,kind="drawing"})
@@ -84,28 +89,25 @@ end
 function gallery.prepare(source)
     if source.kind=="import" then
         local raw,why=reskate.files.read(source.file)
+        if raw and source.index then
+            local ok,pack=pcall(reskate.json.decode,raw)
+            local item=ok and type(pack)=="table" and type(pack.items)=="table" and pack.items[source.index]
+            raw=if type(item)=="table" and type(item.frame)=="string" then item.frame else nil
+        end
         if raw and imports.decode(raw) then return raw,source.name end
         return nil,why or "Damaged import"
     end
     local doc,why=book.read(source.file)
     if not doc then return nil,why end
-    local parts,w=wallArt.compile(doc,64)
-    if not parts then return nil,w end
-    local h=w/2
-    local lines={string.format("GLART1 %d %d 2048 1024",w,h)}
-    for _,p in parts do
-        table.insert(lines,string.format("%d %d %d %d %d",math.round((p.x+0.5-p.w/2)*w),
-            math.round((p.y+0.5-p.h/2)*h),math.round(p.w*w),math.round(p.h*h),p.colour))
-    end
-    return table.concat(lines,"\n"),doc.name
+    local asset,msg=require("media_format").fromDrawing(doc,wallArt)
+    if not asset then return nil,msg end
+    return asset.frames[1],doc.name,asset
 end
 function gallery.store(item,expected)
     if not gallery.row(item) or item.id~=expected then return nil,"Invalid downloaded artwork" end
     local a=item.asset
-    if type(a)~="table" or a.version~=1 or a.kind~="ink" or type(a.frames)~="table" or #a.frames~=1 or a.sound then
-        return nil,"This artwork needs a client with animation or sound support."
-    end
-    if type(a.frames[1])~="string" or not imports.decode(a.frames[1]) then return nil,"Invalid wall ink data" end
+    local frames,reason=require("media_format").validate(a,imports.decode)
+    if not frames then return nil,reason end
     local files,why=reskate.files.list("gallery/downloads")
     if not files and why~="not found" then return nil,why end
     for _,file in files or {} do
@@ -113,7 +115,7 @@ function gallery.store(item,expected)
     end
     local name=item.title:gsub("[^%w _%-]",""):sub(1,48)
     if name=="" then name="Gallery artwork" end
-    local data={version=1,id=item.id,title=item.title,creator=item.creator,description=item.description,tags=item.tags,frame=a.frames[1]}
+    local data={version=1,id=item.id,title=item.title,creator=item.creator,description=item.description,tags=item.tags,frame=a.frames[1],media=if #a.frames>1 or a.sound then a else nil}
     local path="gallery/downloads/"..name.."~"..expected..".json"
     local ok,problem=reskate.files.write(path,reskate.json.encode(data))
     if not ok then return nil,problem end

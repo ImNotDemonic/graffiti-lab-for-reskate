@@ -1,17 +1,18 @@
 -- ReSkate 20261116's right arm chain starts the upper arm at joint 47.
 -- Aim from that joint so a distant wall never pulls the wrist out of reach.
 local visuals = require("spray_fx")
+local player=require("playback")
 local loopPath, burstPath = "art/spray-loop.wav", "art/spray-burst.wav"
 local loopId, burstId, nextAudioTry = nil, nil, 0
 reskate.audio.preload(loopPath)
 reskate.audio.preload(burstPath)
 
 local function freehandSound(flowing)
-    if not flowing then
+    if not flowing or player.volume()==0 then
         if loopId then reskate.audio.stop(loopId) loopId=nil end
         nextAudioTry=0
     elseif not loopId and reskate.time.now()>=nextAudioTry then
-        loopId=reskate.audio.play(loopPath,{loop=true,position="skater",volume=0.32})
+        loopId=reskate.audio.play(loopPath,{loop=true,position="skater",volume=0.32*player.volume()/100})
         nextAudioTry=reskate.time.now()+500
     end
 end
@@ -81,5 +82,5 @@ end
 return {tick=tick,reset=reset,place=function(hit)
     sweep,sweepTime=hit,0
     if burstId then reskate.audio.stop(burstId) end
-    burstId=reskate.audio.play(burstPath,{position="skater",volume=0.37})
+    burstId=if player.volume()>0 then reskate.audio.play(burstPath,{position="skater",volume=0.37*player.volume()/100}) else nil
 end}

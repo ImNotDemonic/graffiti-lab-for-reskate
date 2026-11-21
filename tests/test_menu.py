@@ -30,12 +30,19 @@ reskate.ui={
     close=function() active=nil end,
     toast=function(t) lastToast=t end,
 }
-reskate.files={list=function() return {} end,read=function() return "saved" end,write=function(_,raw) return raw=="saved" end}
-reskate.json={encode=function(doc) saved=table.clone(doc.strokes) return "saved" end}
+local storageEncode=reskate.json.encode
+reskate.json.encode=function(doc)
+    if doc.strokes then saved=table.clone(doc.strokes) end
+    return storageEncode(doc)
+end
 reskate.menu.page=function(_,fn) nativePage=fn end
 reskate.input.cursor=function() return cursor end
 reskate.input.gamepad=function() return {buttons=buttons} end
-reskate.input.key=function(k) return keys[k] end
+reskate.input.key=function(k)
+    local vk=tonumber(k)
+    if vk then assert(vk>=1 and vk<=254,"a virtual key from 1 to 254") end
+    return keys[vk or k]
+end
 reskate.input.text=function() local result=typed or "" typed=nil return result end
 local d={rect=noop,circle=noop,line=noop,image=noop,game_image=noop,gradient=noop,poly=noop,world_image=noop,
     world_to_screen=function() return nil end,size=function() return size end,
@@ -76,7 +83,7 @@ key("]") assert(has("160 mm"))
 key("E") assert(has("65 mm"))
 click(72,488) assert(has("40 mm"))
 click(100,267) escape() assert(active=="Graffiti Lab" and has("Ink · 40 mm"))
-click(200,778) assert(active=="Graffiti Lab Studio" and has("Designs   0"))
+click(200,778) assert(active=="Graffiti Lab Studio" and has("Designs   1"))
 click(390,187) assert(has("No local marks on this map yet."))
 escape() assert(active=="Graffiti Lab")
 click(200,845) assert(has("DEFAULT KEY"))
@@ -95,6 +102,10 @@ buttons.a=true step() step()
 assert(active=="Premade Art" and live[1].alpha==1 and count()==1,"held A failed to return to the selector")
 buttons.a=false step() key("Right") key("Enter")
 assert(active==nil and live[2].asset:find("birds_dv",1,true))
+key(221) key("E")
+assert(math.abs(previewScale-1.05)<0.00001 and previewAngle==5,"Birds preview did not resize and rotate")
+key(0x30)
+assert(previewScale==1 and previewAngle==0,"top-row 0 did not reset the Birds preview")
 cursor.left=true keys[1]=true step() step()
 assert(active=="Premade Art" and live[2].alpha==1 and count()==2,"placement click passed through the returned menu")
 cursor.left=false keys[1]=false step()
@@ -103,8 +114,10 @@ click(389,185) assert(has("Switchback"),"confirmed mark absent from the gallery 
 escape() escape()
 local originalFiles=reskate.files
 reskate.files={list=function() return {"blackbook-0001.json","blackbook-0002.json","blackbook-0003.json",
-    "blackbook-0004.json","blackbook-0005.json"} end,read=function(file) return file end}
+    "blackbook-0004.json","blackbook-0005.json"} end,read=function(file) if file:match("^blackbook") then return file end return originalFiles.read(file) end,
+    write=originalFiles.write,remove=originalFiles.remove}
 reskate.json.decode=function(file)
+    if not file:match("^blackbook") then return decodeValue(file) end
     return {version=1,name="Drawing "..file:sub(11,14),strokes={{colour=3,size=28,xy={1024,512}}}}
 end
 console.graffiti({"blackbook"}) step() click(470,660)
@@ -146,7 +159,7 @@ def run(luau, checks, name="menu", capture=False, catalogue=None):
         rows.append("{" + ",".join(fields) + "}")
     with TemporaryDirectory() as directory:
         code = [ADAPTER, "local testCatalogue={" + ",\n".join(rows) + "}", HOST]
-        for module in ("dock", "surface", "sharing", "wall_store", "wall_ink", "blackbook", "wall_art", "paint", "studio", "imports", "gallery", "gallery_screen", "selector", "menu", "spray_fx", "spray_arm"):
+        for module in ("dock", "surface", "sharing", "wall_codec", "wall_store", "wall_ink", "media_format", "playback", "pattern", "blackbook", "wall_art", "paint", "studio", "imports", "library", "placements", "map_screen", "photo", "library_screen", "gallery", "gallery_dock", "gallery_screen", "selector", "menu", "spray_fx", "spray_arm"):
             source = (ROOT / "plugin" / (module + ".lua")).read_text(encoding="utf-8")
             code.append(f"modules.{module}=(function()\n{source}\nend)()")
         code.extend([(ROOT / "plugin/main.lua").read_text(encoding="utf-8"), checks])

@@ -93,6 +93,9 @@ def check_package(package):
     source = json.loads((ROOT / "art/catalogue.json").read_text(encoding="utf-8"))
     with ZipFile(package) as archive:
         assert archive.testzip() is None
+        with Image.open(io.BytesIO(archive.read("art/menu-headings.png"))) as headings:
+            ink = headings.getchannel("A").crop((310, 244, 510, 294))
+            assert ink.getbbox() == (0, 0, 200, 50) and ink.getextrema() == (0, 255)
         runtime = json.loads(archive.read("art/catalogue.json"))
         manifest = json.loads(archive.read("reskate-plugin.json"))
         sheets = {p: Image.open(io.BytesIO(archive.read(p))).convert("RGBA") for p in {entry["sheet"] for entry in runtime}}

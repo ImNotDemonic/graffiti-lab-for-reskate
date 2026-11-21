@@ -1,10 +1,12 @@
 local dock = require("dock")
 local book = require("blackbook")
+local pattern=require("pattern")
+local wall=require("wall_art")
 local ink, muted, blaze, panel = "#F2EFE9", "#B5B2AC", "#FF5A1F", "#0D0E10F5"
 local canvas = {672, 252, 1152, 576}
 local perPage = 4
 
-return function(onPlace,onBack,mapMarks)
+return function(onPlace,onBack,mapMarks,editMap)
     local title=dock.editingScreen()
     local mode, doc, file, original = nil, book.new(), nil, nil
     local dirty, rename, pending = false, nil, nil
@@ -15,9 +17,46 @@ return function(onPlace,onBack,mapMarks)
     local note, targets, held = "", {}, {}
     local scale, left, top = 1, 0, 0
 
+    local brush={mode="Off",x=50,y=50,angle=90,sectors=4}
+    local toolsOpen,originPick=false,false
+    local cacheDoc,cacheKey,cacheParts,drawingPreview
+    local mediaOpen,frameIndex,playing,playStart,previewVoice=false,1,false,0,nil
+    local function stopPreview()
+        playing=false
+        if previewVoice then reskate.audio.stop(previewVoice) previewVoice=nil end
+    end
+    local function currentFrame()
+        return {strokes=doc.strokes,tile=doc.tile}
+    end
+    local function keepFrame()
+        if doc.animation then doc.animation.frames[frameIndex]=currentFrame() end
+    end
+    local function useFrame(index)
+        local f=doc.animation.frames[index]
+        frameIndex=index doc.strokes,doc.tile=f.strokes,f.tile
+        stroke,lineStart=nil,nil history,redo={},{} cacheDoc=nil
+    end
+    local function timeline()
+        if not doc.animation then doc.animation={frameMs=350,frames={currentFrame()}} end
+        keepFrame()
+        return doc.animation
+    end
+    local function copyFrame(f)
+        local strokes={}
+        for _,s in f.strokes do
+            local copy=table.clone(s) copy.xy=table.clone(s.xy)
+            if s.symmetry then copy.symmetry=table.clone(s.symmetry) end
+            table.insert(strokes,copy)
+        end
+        return {strokes=strokes,tile=f.tile and table.clone(f.tile)}
+    end
     local function save()
-        local id, raw = book.save(doc, file, original)
+        keepFrame()
+        local master=table.clone(doc)
+        if doc.animation then master.strokes,master.tile=doc.animation.frames[1].strokes,doc.animation.frames[1].tile end
+        local id, raw = book.save(master, file, original)
         if not id then note = "Save failed: " .. tostring(raw) return false end
+        doc.version,doc.artworkId,doc.kind=master.version,master.artworkId,master.kind
         file, original, dirty = id, raw, false
         note = "Saved to Blackbook"
         reskate.log(string.format("Blackbook saved %s (%d strokes, %d points)", id, #doc.strokes, book.pointCount(doc)))
@@ -41,6 +80,8 @@ return function(onPlace,onBack,mapMarks)
         if card and not card.doc then note = "This drawing could not be opened." return end
         local function replace()
             doc = if card then card.doc else book.new()
+            stopPreview() mediaOpen,frameIndex=false,1
+            if doc.animation then useFrame(1) end
             file = if card then card.file else nil
             original = if card then card.raw else nil
             dirty, redo, stroke, rename, note, mode = false, {}, nil, nil, "", "editor"
@@ -60,28 +101,29 @@ return function(onPlace,onBack,mapMarks)
         local change=table.remove(history)
         if not change and #doc.strokes>0 then change={index=#doc.strokes,s=doc.strokes[#doc.strokes]} end
         if not change then return end
-        if change.erased then table.insert(doc.strokes,change.index,change.s) else table.remove(doc.strokes,change.index) end
+        if change.setting then doc.tile=change.before
+        elseif change.erased then table.insert(doc.strokes,change.index,change.s) else table.remove(doc.strokes,change.index) end
         table.insert(redo,change)
         dirty,note=true,""
     end
     local function redoStroke()
         local change=table.remove(redo)
         if not change then return end
-        if change.erased then table.remove(doc.strokes,change.index) else table.insert(doc.strokes,change.index,change.s) end
+        if change.setting then doc.tile=change.after
+        elseif change.erased then table.remove(doc.strokes,change.index) else table.insert(doc.strokes,change.index,change.s) end
         table.insert(history,change)
         dirty,note=true,""
     end
     local function strokeAt(x,y)
         for i=#doc.strokes,1,-1 do
             local s=doc.strokes[i]
-            local ax,ay=s.xy[1],s.xy[2]
-            for j=1,#s.xy,2 do
-                local bx,by=s.xy[j],s.xy[j+1]
+            local hit=false
+            pattern.segments(s,doc.tile,function(ax,ay,bx,by)
                 local dx,dy=bx-ax,by-ay
                 local t=math.clamp(((x-ax)*dx+(y-ay)*dy)/math.max(1,dx*dx+dy*dy),0,1)
-                if (x-ax-dx*t)^2+(y-ay-dy*t)^2<=(s.size/2+3)^2 then return i end
-                ax,ay=bx,by
-            end
+                if (x-ax-dx*t)^2+(y-ay-dy*t)^2<=(s.size/2+3)^2 then hit=true end
+            end)
+            if hit then return i end
         end
     end
     local function finishName()
@@ -93,6 +135,7 @@ return function(onPlace,onBack,mapMarks)
         if rename then finishName() else reskate.input.text(true) rename = "" end
     end
     local function close()
+        stopPreview() mediaOpen=false
         if mode then
             mode, stroke, lineStart, pending, rename = nil, nil, nil, nil, nil
             reskate.ui.close()
@@ -106,7 +149,9 @@ return function(onPlace,onBack,mapMarks)
         reskate.log("Opened " .. (if which == "gallery" then "Blackbook" else "Custom Editor"))
     end
     local function back(native)
-        if pending then
+        if mediaOpen then
+            stopPreview() mediaOpen=false
+        elseif pending then
             pending=nil
         elseif rename then
             rename=nil
@@ -147,7 +192,24 @@ return function(onPlace,onBack,mapMarks)
             label(x+13,y+(h-24)/2,value,"bold",19,if primary then "#101113" else ink)
             target(x,y,w,h,run)
         end
-        local function picture(drawing,x,y,w)
+        local function picture(drawing,x,y,w,unit)
+            local special=drawing.tile~=nil
+            for _,s in drawing.strokes do if s.symmetry then special=true break end end
+            if special and #drawing.strokes>0 then
+                local t=drawing.tile
+                local key=table.concat({book.pointCount(drawing),#drawing.strokes,t and t.width or 0,t and t.height or 0,
+                    if unit then 1 else (t and t.count or 1),tostring(drawing.strokes[#drawing.strokes])},"/")
+                if cacheDoc~=drawing or cacheKey~=key then
+                    local copy=table.clone(drawing)
+                    if unit and t then copy.tile=table.clone(t) copy.tile.count=1 end
+                    cacheParts=wall.compile(copy,64)
+                    cacheDoc,cacheKey=drawing,key
+                end
+                for _,part in cacheParts or {} do
+                    rect(x+(part.x+.5-part.w/2)*w,y+(part.y+.5-part.h/2)*w/2,part.w*w,part.h*w/2,book.palette[part.colour])
+                end
+                return
+            end
             local zoom = w/book.width
             for _, s in drawing.strokes do
                 local xy, c, diameter = s.xy, book.palette[s.colour], s.size * zoom
@@ -197,6 +259,42 @@ return function(onPlace,onBack,mapMarks)
             label(48,510,"DRAWING","bold",15,muted)
             button(48,549,480,49,if rename then "Keep name   /   Enter" else "Rename drawing",nameField)
             button(48,607,480,49,"Open Blackbook",function() if rename then finishName() end gallery(1) end)
+            button(48,669,255,44,"Tiles and symmetry",function() toolsOpen=not toolsOpen end,toolsOpen)
+            button(312,669,216,44,"Frames and sound",function() mediaOpen=true end,mediaOpen)
+            if toolsOpen then
+                local function tileChange(t)
+                    table.insert(history,{setting=true,before=doc.tile,after=t})
+                    doc.tile=t table.clear(redo) dirty=true cacheDoc=nil
+                end
+                local t=doc.tile
+                button(48,720,230,42,"Tile: "..(if t then t.width.." x "..t.height else "Off"),function()
+                    if not t then tileChange({width=512,height=256,count=3})
+                    elseif t.width==512 then tileChange({width=1024,height=512,count=t.count})
+                    elseif t.width==1024 then tileChange({width=2048,height=1024,count=t.count})
+                    else tileChange(nil) end
+                end)
+                button(285,720,243,42,if t then "Pattern: "..t.count.." x "..t.count else "Repeat: enable tile",function()
+                    if t then local nextTile=table.clone(t) nextTile.count=t.count%4+1 tileChange(nextTile) end
+                end)
+                button(48,766,230,42,brush.mode,function() brush.mode=pattern.modes[(table.find(pattern.modes,brush.mode) or 0)%#pattern.modes+1] end)
+                button(285,766,243,42,"Origin: click canvas",function() originPick=true end,originPick)
+                button(48,812,230,42,"Axis: "..brush.angle.." degrees",function() brush.angle=(brush.angle+15)%180 end)
+                button(285,812,243,42,"Sectors: "..brush.sectors,function() brush.sectors=brush.sectors%8+1 if brush.sectors<2 then brush.sectors=2 end end)
+                if t and #doc.strokes>0 then
+                    label(1170,832,"PATTERN PREVIEW","bold",15,muted)
+                    -- Draw one reduced pattern only when a source stroke or repeat setting changes.
+                    local overlay=drawingPreview
+                    local key=table.concat({tostring(doc),tostring(t),tostring(doc.strokes[#doc.strokes]),book.pointCount(doc)},":")
+                    if not overlay or overlay.key~=key then
+                        overlay={key=key,parts=wall.compile(doc,32)} drawingPreview=overlay
+                    end
+                    for _,part in overlay.parts or {} do
+                        rect(1170+(part.x+.5-part.w/2)*256,862+(part.y+.5-part.h/2)*128,part.w*256,part.h*128,book.palette[part.colour])
+                    end
+                end
+            end
+            local last=history[#history]
+            if last then label(48,875,if last.setting then "Undo tile settings" elseif last.erased then "Undo stroke erasure" else "Undo brush stroke","body",16,muted) end
             button(48,920,112,53,"Undo",undo)
             button(168,920,112,53,"Redo",redoStroke)
             rect(291,920,237,53,blaze)
@@ -206,7 +304,20 @@ return function(onPlace,onBack,mapMarks)
             label(672,186,if rename then (if rename == "" then "Type a new name…" else rename .. "|") else doc.name,"heading",38)
             label(672,227,"2048 × 1024   /   TRANSPARENT","bold",15,muted)
             d:image("art/checker.png",p(672,252),p(1824,828))
-            picture(doc,672,252,1152)
+            picture(doc,672,252,1152,true)
+            if brush.mode~="Off" or originPick then
+                local gx,gy=672+1152*brush.x/100,252+576*brush.y/100
+                d:circle(p(gx,gy),5*scale,{colour=blaze,fill=true})
+                local axes=if brush.mode=="Radial mirror" or brush.mode=="Rotational" then brush.sectors elseif brush.mode=="Four-way" then 4 else 2
+                local tile=doc.tile
+                for i=0,axes-1 do
+                    local a=math.rad(brush.angle)+2*math.pi*i/axes
+                    local dx,dy=math.cos(a)*1152/(tile and tile.width or 2048),math.sin(a)*576/(tile and tile.height or 1024)
+                    local length=math.min(if dx>0 then (1824-gx)/dx elseif dx<0 then (672-gx)/dx else math.huge,
+                        if dy>0 then (828-gy)/dy elseif dy<0 then (252-gy)/dy else math.huge)
+                    d:line(p(gx,gy),p(gx+length*dx,gy+length*dy),{colour="#FF804CB0",thickness=1})
+                end
+            end
             if lineStart then
                 d:circle(p(672+lineStart[1]*1152/book.width,252+lineStart[2]*576/book.height),
                     5*scale,{colour=book.palette[colour],fill=false})
@@ -220,6 +331,7 @@ return function(onPlace,onBack,mapMarks)
             button(48,168,232,43,"Designs   "..#files,function() mapTab=false end,not mapTab)
             button(288,168,236,43,"On this map   "..markCount,function() mapTab,mapPage=true,1 end,mapTab)
             if mapTab then
+                button(48,808,480,50,"Edit placements",function() close() editMap() end,true)
                 mapPage=math.clamp(mapPage,1,math.max(1,math.ceil(markCount/8)))
                 for i=(mapPage-1)*8+1,math.min(mapPage*8,markCount) do
                     local y=245+((i-1)%8)*58
@@ -261,6 +373,75 @@ return function(onPlace,onBack,mapMarks)
             label(48,1004,"Esc / B   Back","body",18,muted)
             end
         end
+        if mode=="editor" and mediaOpen then
+            table.clear(targets)
+            local a=doc.animation
+            local frames=if a then a.frames else {currentFrame()}
+            local timing=if a then a.frameMs else 350
+            local shown=if playing then 1+math.floor((reskate.time.now()-playStart)/timing)%#frames else frameIndex
+            rect(600,50,1250,910,"#101113")
+            label(632,80,"Animation and sound","heading",36)
+            label(632,129,"Selected frame "..frameIndex.." of "..#frames.."    /    "..timing.." ms per frame","bold",18,muted)
+            for i,f in frames do
+                local x=632+(i-1)*145
+                rect(x,170,134,79,if i==frameIndex then blaze else "#45464A")
+                rect(x+3,173,128,73,"#222326")
+                picture(f,x+4,177,126)
+                target(x,170,134,79,function() stopPreview() keepFrame() if a then useFrame(i) end end)
+            end
+            local function add(duplicate)
+                if #frames>=8 then note="Up to 8 frames per piece." return end
+                stopPreview() local anim=timeline()
+                table.insert(anim.frames,frameIndex+1,if duplicate then copyFrame(currentFrame()) else {strokes={}})
+                useFrame(frameIndex+1) dirty=true
+            end
+            button(632,265,165,44,"Add frame",function() add(false) end)
+            button(803,265,165,44,"Duplicate",function() add(true) end)
+            button(974,265,165,44,"Move left",function()
+                if a and frameIndex>1 then stopPreview() keepFrame() local i=frameIndex
+                    a.frames[i],a.frames[i-1]=a.frames[i-1],a.frames[i] useFrame(i-1) dirty=true end
+            end)
+            button(1145,265,165,44,"Move right",function()
+                if a and frameIndex<#frames then stopPreview() keepFrame() local i=frameIndex
+                    a.frames[i],a.frames[i+1]=a.frames[i+1],a.frames[i] useFrame(i+1) dirty=true end
+            end)
+            button(1316,265,175,44,"Remove frame",function()
+                if a and #frames>1 then stopPreview() table.remove(a.frames,frameIndex) useFrame(math.min(frameIndex,#frames)) dirty=true end
+            end)
+            button(1497,265,315,44,"Edit selected frame",function() stopPreview() mediaOpen=false end,true)
+            button(632,322,200,44,if playing then "Pause" else "Play loop",function()
+                keepFrame() playing=not playing playStart=reskate.time.now()
+            end)
+            button(842,322,190,44,"Faster",function() local anim=timeline() anim.frameMs=math.max(100,anim.frameMs-50) dirty=true end)
+            button(1042,322,190,44,"Slower",function() local anim=timeline() anim.frameMs=math.min(5000,anim.frameMs+50) dirty=true end)
+            d:image("art/checker.png",p(632,390),p(1192,670))
+            picture(frames[shown],632,390,560)
+            local snd=doc.sound
+            button(1220,390,570,44,"Sound: "..(snd and snd.id or "Off"),function()
+                stopPreview()
+                if not snd then doc.sound={id="spray-burst",trigger="interact",volume=30,radius=6,cooldown=2}
+                elseif snd.id=="spray-burst" then snd.id="spray-loop" else doc.sound=nil end
+                dirty=true
+            end)
+            if snd then
+                button(1220,442,570,44,"Trigger: "..snd.trigger,function()
+                    snd.trigger=if snd.trigger=="interact" then "approach" elseif snd.trigger=="approach" then "nearby-loop" else "interact"
+                    dirty=true
+                end)
+                button(1220,494,280,44,"Volume: "..snd.volume.."%",function() snd.volume=(snd.volume+10)%110 dirty=true end)
+                button(1510,494,280,44,"Radius: "..snd.radius.." m",function() snd.radius=snd.radius%20+1 dirty=true end)
+                button(1220,546,280,44,"Cooldown: "..snd.cooldown.." s",function() snd.cooldown=snd.cooldown%10+1 dirty=true end)
+                button(1510,546,280,44,"Preview sound",function()
+                    if previewVoice then reskate.audio.stop(previewVoice) end
+                    local volume=require("playback").volume()*snd.volume/10000
+                    if volume>0 then previewVoice=reskate.audio.play("art/"..snd.id..".wav",{position="skater",volume=volume}) end
+                end)
+            end
+            label(632,700,"Ctrl+J interacts with the nearest sound piece in range.","body",19,muted)
+            button(632,754,330,52,"Save to Blackbook",save,true)
+            button(982,754,330,52,"Return to drawing",function() stopPreview() mediaOpen=false end)
+            label(632,830,note,"body",19,muted)
+        end
         if pending then
             table.clear(targets)
             rect(40,616,496,372,"#18191C")
@@ -297,6 +478,7 @@ return function(onPlace,onBack,mapMarks)
         elseif mode == "editor" and not pending then
             local saveKey, undoKey, redoKey = key("S"),key("Z"),key("Y")
             if reskate.input.key(17) then
+                if mediaOpen and not saveKey then return end
                 if saveKey then save() elseif undoKey then undo() elseif redoKey then redoStroke() end
             end
         end
@@ -312,16 +494,20 @@ return function(onPlace,onBack,mapMarks)
                 end
             end
         end
-        if mode ~= "editor" or pending or rename then return end
+        if mode ~= "editor" or pending or rename or mediaOpen then return end
         local cx,cy,w,h=unpack(canvas)
         if x<cx or x>=cx+w or y<cy or y>=cy+h then stroke=nil return end
         if not stroke and not click then return end
-        local margin = width/2
-        local px=math.round(math.clamp((x-cx)/w*book.width,margin,book.width-margin))
-        local py=math.round(math.clamp((y-cy)/h*book.height,margin,book.height-margin))
+        if originPick and click then
+            brush.x,brush.y=math.round((x-cx)/w*100),math.round((y-cy)/h*100) originPick=false return
+        end
+        local sourceW,sourceH=if doc.tile then doc.tile.width else book.width,if doc.tile then doc.tile.height else book.height
+        local margin = if doc.tile then 0 else width/2
+        local px=math.round(math.clamp((x-cx)/w*sourceW,margin,sourceW-margin))
+        local py=math.round(math.clamp((y-cy)/h*sourceH,margin,sourceH-margin))
         if tool=="Eraser" or tool=="Picker" then
             if not click then return end
-            local i=strokeAt((x-cx)/w*book.width,(y-cy)/h*book.height)
+            local i=strokeAt(px,py)
             if i then
                 if tool=="Picker" then colour=doc.strokes[i].colour else record(table.remove(doc.strokes,i),i,true) end
             end
@@ -333,12 +519,12 @@ return function(onPlace,onBack,mapMarks)
             if #doc.strokes>=book.maxStrokes then note="Stroke limit reached. Undo a stroke to continue." return end
             if tool == "Line" then
                 if not lineStart then lineStart,note={px,py},"" return end
-                table.insert(doc.strokes,{colour=colour,size=width,xy={lineStart[1],lineStart[2],px,py}})
+                table.insert(doc.strokes,{colour=colour,size=width,symmetry=if brush.mode=="Off" then nil else table.clone(brush),xy={lineStart[1],lineStart[2],px,py}})
                 lineStart,dirty,note=nil,true,""
                 record(doc.strokes[#doc.strokes],#doc.strokes,false)
                 return
             end
-            stroke={colour=colour,size=width,xy={}}
+            stroke={colour=colour,size=width,symmetry=if brush.mode=="Off" then nil else table.clone(brush),xy={}}
             table.insert(doc.strokes,stroke)
             record(stroke,#doc.strokes,false)
         end
@@ -347,5 +533,6 @@ return function(onPlace,onBack,mapMarks)
         table.insert(xy,px)
         table.insert(xy,py)
     end)
+    reskate.on("unload",stopPreview)
     return {open=open, resumeGallery=function() open("gallery",page) end, close=close, active=function() return mode~=nil end}
 end

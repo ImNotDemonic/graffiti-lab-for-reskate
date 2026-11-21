@@ -4,6 +4,7 @@
   "entry": "plugin/main.lua",
   "permissions": [
     "camera",
+    "capture",
     "skater.read",
     "skater.animation",
     "world.raycast",

@@ -8,14 +8,18 @@ online=false step()
 local folder={["Signal.graffiti"]="GLART1 96 48 96 48\n16 8 16 32 3\n32 32 48 8 6",
     ["Broken.graffiti"]="GLART1 1 1 1 1\n0 0 2 1 3"}
 local revealed=false
+local generalWrite,generalRead=reskate.files.write,reskate.files.read
 reskate.files.list=function(path)
     if path~="imports" then return {} end
     return {"Broken.graffiti","Signal.graffiti","Import Artwork.html","private.txt"}
 end
 reskate.package.read=function(path) assert(path=="art/Import Artwork.html") return "local helper" end
-reskate.files.write=function(path,raw) assert(path=="imports/Import Artwork.html" and raw=="local helper") return true end
+reskate.files.write=function(path,raw)
+    if path=="imports/Import Artwork.html" then assert(raw=="local helper") return true end
+    return generalWrite(path,raw)
+end
 reskate.files.reveal=function(path) assert(path=="imports") revealed=true return true end
-reskate.files.read=function(path) return folder[path:sub(9)] end
+reskate.files.read=function(path) if path:sub(1,8)=="imports/" then return folder[path:sub(9)] end return generalRead(path) end
 console.graffiti({"library"}) step()
 click(360,100) assert(active=="Premade Art" and revealed and has("SIGNAL"))
 click(105,400) key("Enter")

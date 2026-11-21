@@ -2,6 +2,15 @@
 
 Put one of 46 premade pieces on a wall, draw a design in your Blackbook, or paint directly on the map. Open Graffiti Lab with **Ctrl+L** or **Back + Y**.
 
+## 0.8.0 development build
+
+**Public Artworks** uses the Graffiti Lab sidebar. Browse real thumbnails, select a piece for a larger preview, and download it to **Premade Art → My imports**. Animated pieces use their first frame on browse cards.
+
+- **Premade Art → Artwork Library** brings together favourites, folders, search, recents, imports and saved drawings. Use **Edit placements on this map** to move, duplicate, resize or remove a saved offline placement.
+- **Custom Editor → Tiles and symmetry** adds repeating tiles and mirrored or rotational strokes. **Frames and sound** edits short loops and sets a positional sound. Use **Ctrl+J** near interactive artwork.
+- **Artwork Library → Take an in-game photo** captures the current view after four seconds. Open the local image preparer to crop, rotate, remove a border, reshape a piece or turn a photo into poster, stencil, comic or halftone art. Save the new file in imports and refresh My imports.
+- Wall paint uses less memory for the same saved strokes. Older drawings and wall-paint pages still load. Advanced drawing edits preserve a recovery copy when upgrading the save format.
+
 ## Public Artworks in 0.7.0
 
 Open **Graffiti Lab → Public Artworks**. Browse and preview work from other sessions. Download a static piece, then find it in **Premade Art → My imports**. It stays on this PC when the game restarts. Publisher and downloader can use separate gallery profiles without joining the same skate session.

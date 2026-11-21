@@ -2,6 +2,7 @@
 -- order and keep translucent previews from getting darker at intersections.
 local art = {width = 1.0, height = 0.5, maxParts = 256}
 local book = require("blackbook")
+local pattern=require("pattern")
 
 local function paint(grid, w, h, ax, ay, bx, by, radius, colour)
     local dx, dy = bx-ax, by-ay
@@ -29,18 +30,17 @@ end
 local function raster(doc,w)
     local h=w/2
     local grid=table.create(w*h,0)
-    local scale=w/book.width
+    local tile=doc.tile
+    local count=if tile then tile.count else 1
+    local tileW,tileH=if tile then tile.width else book.width,if tile then tile.height else book.height
+    local cellW,cellH=w/count,h/count
     for _,stroke in doc.strokes do
-        local xy=stroke.xy
-        -- Keep a thin marker visible even when it falls between pixel centres.
-        local r=math.max(0.72,stroke.size*scale/2)
-        local ax,ay=xy[1]*scale,xy[2]*scale
-        if #xy==2 then paint(grid,w,h,ax,ay,ax,ay,r,stroke.colour) end
-        for i=3,#xy,2 do
-            local bx,by=xy[i]*scale,xy[i+1]*scale
-            paint(grid,w,h,ax,ay,bx,by,r,stroke.colour)
-            ax,ay=bx,by
-        end
+        local radius=math.max(0.72,stroke.size*math.min(cellW/tileW,cellH/tileH)/2)
+        pattern.segments(stroke,tile,function(ax,ay,bx,by)
+            for j=0,count-1 do for i=0,count-1 do
+                paint(grid,w,h,(i+ax/tileW)*cellW,(j+ay/tileH)*cellH,(i+bx/tileW)*cellW,(j+by/tileH)*cellH,radius,stroke.colour)
+            end end
+        end)
     end
     return grid
 end

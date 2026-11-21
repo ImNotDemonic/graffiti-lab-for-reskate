@@ -1,181 +1,141 @@
 local api=require("gallery")
 local imports=require("imports")
 local dock=require("dock")
-local palette=require("blackbook").palette
-local screen="Public Artworks"
+local publicScreen=dock.editingScreen()
+local localScreen="Artwork Library"
 local function trim(s) return s:match("^%s*(.-)%s*$") end
-local function short(value,n)
-    -- Display native widget labels within their byte budgets.
-    if #value<=n then return value end
-    local ending=n-3
-    while ending>0 and (value:byte(ending+1) or 0)>=128 and (value:byte(ending+1) or 0)<192 do ending-=1 end
-    return value:sub(1,ending).."..."
-end
-return function(onBack)
-    local open,busy,generation=false,false,0
-    local tab,query,page,rows,more=1,"",1,{},false
-    local selection,profiles,profile=nil,{},nil
-    local sources,sourcePage={},1
-    local image,aspect,raw,pieceTitle,description,tagText=nil,1,nil,"","",""
-    local note,lastRequest,op,opContent="",nil,nil,nil
-    local sequence=0
-    local function show(frame)
-        if frame then image,aspect=imports.decode(frame) else image,aspect=nil,1 end
-    end
+
+return function(onBack,localScreens)
+    local s={tab=1,page=1,query="",rows={},sources={},sourcePage=1,profiles={},profilePage=1,note=""}
+    local open,localView,generation=false,nil,0
+    local retry,operation,signature
+    local actions={}
+    local overlay=require("gallery_dock")(s,actions)
     local function invalidate()
-        generation+=1 busy=false lastRequest=nil
+        generation+=1 retry=nil s.busy,s.failed=false,false
     end
-    local function request(message,send,thenDo)
+    local function request(note,send,complete)
         invalidate()
-        busy,note=true,message
-        local id=generation
-        lastRequest=function() request(message,send,thenDo) end
-        send(function(result,why)
-            if not open or id~=generation then return end
-            busy=false
-            if not result then note=tostring(why or "Gallery unavailable") return end
-            lastRequest=nil thenDo(result,why)
+        local ticket=generation
+        s.busy,s.note=true,note
+        retry=function() request(note,send,complete) end
+        send(function(data,why)
+            if not open or localView or ticket~=generation then return end
+            s.busy=false
+            if not data then s.failed,s.note=true,tostring(why or "Gallery unavailable.") return end
+            retry=nil complete(data)
         end)
     end
-    local function browse(n)
-        local needle=query
-        request("Loading artwork…",function(done) api.browse(needle,n,done) end,function(data)
-            page,rows,more,selection=n,data.items,data.more==true,nil
-            show(nil)
-            note=if #rows==0 then "No matching artwork." else "Select a piece to preview it."
+    local function browse(page)
+        local query=s.query
+        request("Loading artwork…",function(done) api.browse(query,page,done) end,function(data)
+            s.page,s.rows,s.more=page,data.items,data.more==true
+            s.selection,s.manage=s.rows[1],false
+            s.note=if #s.rows==0 then "Try a different title, creator or tag." else ""
         end)
     end
-    local function refreshSources()
-        sources,sourcePage=api.sources(),1
-        raw,op=nil,nil show(nil)
-        note=if #sources==0 then "Save a Blackbook drawing or import a piece first." else "Choose your own artwork to preview it."
+    local function profiles()
+        s.profiles,s.profilePage=api.profiles(),1
+        if s.profile and not table.find(s.profiles,s.profile) then s.profile=nil end
     end
-    local function chooseTab(value)
-        invalidate() tab=value raw,selection=nil,nil show(nil)
-        if tab==1 then browse(1) elseif tab==2 then refreshSources() else note="Select the gallery identity for this installation." end
+    function actions.tab(n)
+        invalidate()
+        s.tab,s.selection,s.manage,s.source,s.raw,s.preview=n,nil,false,nil,nil,nil
+        if n==1 then browse(1)
+        elseif n==2 then
+            s.sources,s.sourcePage=api.sources(),1
+            s.note=if not s.profile then "Choose a creator profile on the Account tab to publish."
+                elseif #s.sources==0 then "Save a drawing or import a piece first." else "Choose a piece to preview."
+        else profiles() s.note="Creator keys are stored on this computer." end
     end
-    local function buyCopy(item)
-        local account=profile
-        request("Downloading "..item.title.."…",function(done) api.download(item.id,account,done) end,function(data)
-            local ok,message=api.store(data,item.id)
-            if not ok then note="Download could not be saved: "..tostring(message) return end
-            note=message..(if data.downloadedBy then " as "..data.downloadedBy else "")
-            reskate.log("Gallery downloaded "..data.id.." by "..data.creator.." as "..(data.downloadedBy or "guest"))
+    function actions.select(item) if not s.busy then s.selection,s.manage,s.note=item,false,"" end end
+    function actions.search() if not s.busy then browse(1) end end
+    function actions.page(n) if not s.busy then browse(s.page+n) end end
+    function actions.sourcePage(n) s.sourcePage+=n end
+    function actions.options() s.manage=not s.manage end
+    function actions.download()
+        if s.busy or not s.selection then return end
+        local id=s.selection.id
+        local profile=s.profile
+        request("Downloading "..s.selection.title.."…",function(done) api.download(id,profile,done) end,function(data)
+            local ok,msg=api.store(data,id)
+            s.note=if ok then msg else "Save failed: "..tostring(msg)
+            if ok then reskate.log("Gallery downloaded "..id.." by "..data.creator.." as "..(data.downloadedBy or "guest")) end
         end)
     end
-    local function publish()
-        if not raw or not profile or trim(pieceTitle)=="" then note="Choose a profile, a piece and a title." return end
+    local function moderation(action)
+        if s.busy or not s.profile or not s.selection then return end
+        local id,profile=s.selection.id,s.profile
+        local payload={id=id}
+        if action=="report" then payload.reason="Player reported this artwork" end
+        request(if action=="report" then "Sending report…" else "Unpublishing…",
+            function(done) api.request(action,payload,profile,done) end,function() browse(s.page) end)
+    end
+    function actions.report() moderation("report") end
+    function actions.unpublish() moderation("unpublish") end
+    function actions.source(item)
+        if s.busy then return end
+        s.source=item
+        local raw,name,media=api.prepare(item)
+        s.raw,s.media,s.preview=raw,media,nil
+        if not raw then s.note=tostring(name) return end
+        local parts,aspect=imports.decode(raw)
+        s.preview={parts=parts,aspect=aspect}
+        local last=utf8.offset(name,math.min(utf8.len(name) or 1,60)+1)
+        s.title,s.description,s.tags=if last then name:sub(1,last-1) else name,"",""
+        s.note=if media then string.format("%d frame(s) • %d ms • %s",#media.frames,media.frameMs,media.sound and media.sound.id or "Silent") else "Preview your artwork before publishing."
+    end
+    function actions.publish()
+        if s.busy or not s.raw or not s.profile or trim(s.title)=="" then s.note="Choose a profile, piece and title." return end
         local tags={}
-        for tag in tagText:gmatch("[^,]+") do
-            tag=trim(tag)
-            if #tag>24 or #tags>=8 then note="Use up to eight tags of 24 bytes each." return end
-            if #tag>0 then table.insert(tags,tag) end
+        for value in s.tags:gmatch("[^,]+") do
+            local tag=trim(value)
+            if #tag>24 or #tags>=8 then s.note="Use up to eight tags of 24 bytes each." return end
+            if tag~="" then table.insert(tags,tag) end
         end
-        local account=profile
-        local data={title=trim(pieceTitle),description=trim(description),tags=if #tags>0 then tags else nil,
-            asset={version=1,kind="ink",frames={raw},frameMs=250}}
-        local signature=reskate.json.encode(data)
-        if not op or opContent~=signature then
-            sequence+=1
-            op=string.format("game-%d-%d-%d",math.floor(reskate.time.now()),math.random(1,1000000000),sequence)
-            opContent=signature
-        end
-        data.operation=op
-        request("Publishing "..data.title.."…",function(done) api.request("publish",data,account,done) end,function(response)
-            if type(response.id)~="string" then note="Unknown publication result. Check Browse before retrying." return end
-            note="Published "..data.title
-            reskate.log("Gallery published "..response.id.." as "..account)
-            op,raw=nil,nil
+        local payload={title=trim(s.title),description=trim(s.description),tags=if #tags>0 then tags else nil,
+            asset=s.media or {version=1,kind="ink",frames={s.raw},frameMs=250}}
+        local key=reskate.json.encode(payload)
+        if not operation or key~=signature then operation=string.format("game-%d-%d",math.floor(reskate.time.now()),math.random(1,1000000000)) signature=key end
+        payload.operation=operation
+        local profile=s.profile
+        request("Publishing "..payload.title.."…",function(done) api.request("publish",payload,profile,done) end,function(data)
+            if type(data.id)~="string" then s.note="Check Browse before retrying this publication." return end
+            s.note="Published "..payload.title
+            reskate.log("Gallery published "..data.id.." as "..profile)
+            operation,s.raw,s.preview=nil,nil,nil
         end)
+    end
+    function actions.profile(name) s.profile=name s.note=if name then "Using "..name else "Browsing as guest." end
+    function actions.keys()
+        local ok,why=reskate.files.write("gallery/accounts/README.txt","Place your operator-issued 64-character creator key in a file named Your Name.key. Keep it private.")
+        if ok then ok,why=reskate.files.reveal("gallery/accounts") end
+        s.note=if ok then "Add a .key file, then refresh profiles." else tostring(why)
+    end
+    actions.profiles=profiles
+    function actions.retry() if retry then retry() end end
+    function actions.cancel() invalidate() s.note="Stopped waiting. Refresh Browse to check submitted changes." end
+    local function clear()
+        open=false invalidate() overlay.reset()
+        if localView then localView.close() localView=nil end
     end
     local function close()
-        if open then open=false invalidate() show(nil) reskate.ui.close() end
+        if open then clear() reskate.ui.close() end
     end
-    reskate.ui.screen(screen,function(ui)
-        if not open then return end
-        local nextTab=ui:tabs("gallery-tabs",{"Browse","Publish","Account"},tab)
-        if nextTab~=tab then chooseTab(nextTab) end
-        ui:note(short(note,185))
-        if busy then
-            if ui:button("stop-wait","Stop waiting") then invalidate() note="Stopped waiting. Refresh Browse to check any submitted change." end
-            return
-        end
-        if lastRequest and ui:button("retry","Retry last request") then lastRequest() return end
-        if tab==1 then
-            query=short(ui:text("query","Search",query,"Title, artist or tag"),80)
-            if ui:button("search","Search / refresh") then browse(1) return end
-            for i,item in rows do
-                if ui:button("pick-"..i,short(item.title.."  /  "..item.creator,70)) then
-                    selection=item show(item.thumbnail) note=short(item.description,170)
-                end
-            end
-            if selection then
-                if ui:button("download","Download to My imports",true) then buyCopy(selection) return end
-                if profile and ui:button("flag","Report and hide this entry") then
-                    local id=selection.id
-                    request("Sending report…",function(done) api.request("report",{id=id,reason="Player reported this artwork"},profile,done) end,function()
-                        for i,item in rows do if item.id==id then table.remove(rows,i) break end end
-                        selection=nil show(nil) note="Report submitted."
-                    end)
-                end
-                if profile and ui:button("unpublish","Unpublish my selected piece") then
-                    local id=selection.id
-                    request("Unpublishing…",function(done) api.request("unpublish",{id=id},profile,done) end,function() browse(page) end)
-                end
-            end
-            if page>1 and ui:button("prev","Previous page") then browse(page-1) end
-            if more and ui:button("next","Next page") then browse(page+1) end
-        elseif tab==2 then
-            if not profile then ui:note("Choose a creator key on the Account tab to publish.") end
-            for i=(sourcePage-1)*6+1,math.min(#sources,sourcePage*6) do
-                local item=sources[i]
-                if ui:button("source-"..i,short(item.name,68)) then
-                    local data,name=api.prepare(item)
-                    if data then raw,pieceTitle,description,tagText=data,short(name,64),"","" show(raw) note="Preview the piece, then confirm below."
-                    else raw=nil show(nil) note=tostring(name) end
-                end
-            end
-            if sourcePage>1 and ui:button("sprev","Previous sources") then sourcePage-=1 end
-            if sourcePage*6<#sources and ui:button("snext","More sources") then sourcePage+=1 end
-            if raw then
-                pieceTitle=short(ui:text("title","Title",pieceTitle,"Artwork title"),64)
-                description=short(ui:text("desc","Description",description,"Optional"),240)
-                tagText=short(ui:text("tags","Tags",tagText,"Comma-separated"),160)
-                if profile and ui:button("publish","Publish this artwork",true) then publish() end
-            end
-        else
-            ui:info("Using",profile or "Guest")
-            for i=1,math.min(#profiles,16) do
-                if ui:button("profile-"..i,profiles[i]) then profile=profiles[i] note="Using "..profile end
-            end
-            if ui:button("guest","Browse as guest") then profile=nil note="Guest downloads are public." end
-            if ui:button("keys","Open creator key folder") then
-                local ok,why=reskate.files.write("gallery/accounts/README.txt","Place your operator-issued 64-character creator key in a file named Your Name.key. Keep it private.")
-                if ok then ok,why=reskate.files.reveal("gallery/accounts") end
-                note=if ok then "Add your .key file, then refresh profiles." else tostring(why)
-            end
-            if ui:button("profiles","Refresh profiles") then profiles=api.profiles() end
-        end
-        if ui:button("back","Back to Graffiti Lab") then close() onBack() end
-    end,{dock="left",width=0.36})
+    function actions.back() close() onBack() end
+    reskate.ui.screen(localScreen,function(ui) if open and localView then localView.panel(ui) end end,{dock="left",width=.36})
     reskate.on("screen_closed",function(name)
-        if name==screen and open then open=false invalidate() show(nil) onBack() end
+        if open and name==(if localView then localScreen else publicScreen) then clear() onBack() end
     end)
-    reskate.on("draw",function(d)
-        if not open or not image then return end
-        local u=dock.draw(d)
-        local w=210*math.min(1,aspect)
-        local h=210*math.min(1,1/aspect)
-        local x,y=u.width-w-32,84
-        u.rect(x-4,y-4,w+8,h+8,dock.dark)
-        d:image("art/checker.png",u.p(x,y),u.p(x+w,y+h))
-        for _,part in image do
-            u.rect(x+(part.x+0.5-part.w/2)*w,y+(part.y+0.5-part.h/2)*h,part.w*w,part.h*h,palette[part.colour])
+    reskate.on("draw",function(d) if open and not localView then overlay.draw(d) end end)
+    reskate.on("tick",function() if open and not localView then overlay.tick() end end)
+    return {open=function(view)
+        if open then close() end
+        open=true overlay.reset()
+        if type(view)=="string" and localScreens and localScreens[view] then
+            localView=localScreens[view] localView.open() reskate.ui.open(localScreen) return
         end
-    end)
-    return {open=function()
-        open=true profiles=api.profiles()
-        if profile and not table.find(profiles,profile) then profile=nil end
-        tab=1 reskate.ui.open(screen) browse(1)
+        profiles() s.rows={} s.page=1 s.more=false
+        reskate.ui.open(publicScreen) actions.tab(1)
     end,close=close,active=function() return open end}
 end

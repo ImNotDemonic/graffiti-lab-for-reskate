@@ -1,7 +1,7 @@
 -- A page is replaced atomically by ReSkate. Only touched pages need rewriting.
 -- Each row is stroke ID, colour, and the four 3D axes/translation of a decal.
 local rowBytes, rowsPerPage = 53, 2048
-local assetRoot = "world/materials/decal/reskate_graffitilab/ink_%02d_dv"
+local codec=require("wall_codec")
 
 local function folder(map)
     local hash, second=5381,7
@@ -11,32 +11,6 @@ local function folder(map)
         second=(second*131+byte)%4294967296
     end
     return string.format("wall-paint/%08x%08x/",hash,second)
-end
-
-local function pack(id,colour,matrix)
-    local b=buffer.create(rowBytes)
-    buffer.writeu32(b,0,id)
-    buffer.writeu8(b,4,colour)
-    for axis=0,3 do
-        for j=0,2 do buffer.writef32(b,5+axis*12+j*4,matrix[axis*4+j+1]) end
-    end
-    return buffer.tostring(b)
-end
-
-local function unpackRow(row)
-    local b=buffer.fromstring(row)
-    local id,colour=buffer.readu32(b,0),buffer.readu8(b,4)
-    if id==0 or colour<1 or colour>8 then return end
-    local m=table.create(16,0)
-    for axis=0,3 do
-        for j=0,2 do
-            local n=buffer.readf32(b,5+axis*12+j*4)
-            if not (math.abs(n)<math.huge) then return end
-            m[axis*4+j+1]=n
-        end
-    end
-    m[16]=1
-    return id,string.format(assetRoot,colour),m
 end
 
 local function call(method,...)
@@ -159,7 +133,7 @@ return function(restore)
             local row=current.rows[slot]
             if row==nil then current=nil pageIndex+=1 nextRead=now+35 return end
             if row then
-                local id,asset,m=unpackRow(row)
+                local id,asset,m=codec.unpack(row)
                 if not id then warn("Damaged wall paint. Saved paint is protected.") nextRead=math.huge return end
                 newestId=math.max(newestId,id)
                 restore(id,asset,m,current,slot)
@@ -181,8 +155,8 @@ return function(restore)
             pages[lastPage]=page
         end
         local slot=#page.rows+1
-        page.rows[slot]=pack(id,colour,sample.matrix)
-        sample.page,sample.slot=page,slot
+        page.rows[slot]=codec.pack(id,colour,sample.matrix)
+        sample.page,sample.slot,sample.matrix=page,slot,nil
         dirty[page.path]=page
     end
 

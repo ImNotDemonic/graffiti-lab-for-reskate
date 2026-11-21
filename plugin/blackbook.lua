@@ -1,4 +1,6 @@
 -- One file is one editable drawing. The file name is its stable ID across renames.
+local pattern=require("pattern")
+local media=require("media_format")
 local book = {
     width = 2048, height = 1024, maxPoints = 448, maxStrokes = 96,
     palette = assert(reskate.package.read_json("art/palette.json")),
@@ -28,16 +30,24 @@ local function fileName(file)
     return type(file) == "string" and file:match("^blackbook%-%d%d%d%d%.json$") ~= nil
 end
 
-local function valid(doc)
-    if type(doc) ~= "table" or (doc.version ~= 1 and doc.version ~= 2) or type(doc.name) ~= "string"
+local function valid(doc,frameOnly)
+    if type(doc) ~= "table" or (doc.version ~= 1 and doc.version ~= 2 and doc.version ~= 3) or type(doc.name) ~= "string"
         or #doc.name < 1 or #doc.name > 32 or doc.name:find("[^ -~]")
-        or not array(doc.strokes, book.maxStrokes) then return false end
+        or not pattern.validTile(doc.tile) or not array(doc.strokes, book.maxStrokes) then return false end
     for _, stroke in doc.strokes do
-        if type(stroke) ~= "table" or not integer(stroke.colour, 1, #book.palette)
+        if type(stroke) ~= "table" or not pattern.validBrush(stroke.symmetry) or not integer(stroke.colour, 1, #book.palette)
             or not integer(stroke.size, 2, 64) or not array(stroke.xy, book.maxPoints * 2)
             or #stroke.xy < 2 or #stroke.xy % 2 ~= 0 then return false end
         for i = 1, #stroke.xy, 2 do
             if not integer(stroke.xy[i], 0, book.width) or not integer(stroke.xy[i+1], 0, book.height) then return false end
+        end
+    end
+    if not media.sound(doc.sound) then return false end
+    if doc.animation then
+        local a=doc.animation
+        if frameOnly or type(a)~="table" or not integer(a.frameMs,100,5000) or not array(a.frames,8) or #a.frames<1 then return false end
+        for _,frame in a.frames do
+            if type(frame)~="table" or frame.animation or not valid({version=2,name="Frame",strokes=frame.strokes,tile=frame.tile},true) then return false end
         end
     end
     return book.pointCount(doc) <= book.maxPoints
@@ -60,7 +70,7 @@ function book.read(file)
     if not raw then return nil, why end
     local ok, doc = pcall(reskate.json.decode, raw)
     if not ok or not valid(doc) then return nil, "Unsupported or damaged drawing" end
-    if doc.version == 2 and (doc.kind ~= "drawing" or doc.artworkId ~= file) then
+    if doc.version >= 2 and (doc.kind ~= "drawing" or doc.artworkId ~= file) then
         return nil, "Drawing ID does not match its file"
     end
     -- Reading a legacy drawing never modifies its file.
@@ -88,10 +98,12 @@ function book.save(doc, file, original)
     end
     local saved = table.clone(doc)
     saved.version, saved.kind, saved.artworkId = 2, "drawing", file
+    if doc.tile or doc.animation or doc.sound or doc.version==3 then saved.version=3 end
+    for _,s in doc.strokes do if s.symmetry then saved.version=3 break end end
     local encoded, raw = pcall(reskate.json.encode, saved)
     if not encoded then return nil, "Cannot encode drawing" end
-    if original and doc.version == 1 then
-        local backup = "recovery/blackbook-v1/" .. file
+    if original and doc.version < saved.version then
+        local backup = "recovery/blackbook-v"..doc.version.."/" .. file
         local prior, why = reskate.files.read(backup)
         if prior == nil then
             if why ~= "not found" then return nil, why or "Cannot check the recovery copy" end

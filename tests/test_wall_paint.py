@@ -16,7 +16,7 @@ reskate.files={
     read=function(path) return disk[path],if disk[path] then nil else "not found" end,
     write=function(path,bytes)
         if failWrites then return nil,"disk full" end
-        assert(#bytes<=1048576 and path:match("^wall%-paint/"))
+        assert(#bytes<=1048576 and (path:match("^wall%-paint/") or path:match("^placements/") or path=="library/organisation.json" or path:match("^library/collections/c[%x%-]+%.json$")))
         disk[path]=bytes return true
     end,
     remove=function(path) disk[path]=nil return true end,
@@ -132,7 +132,7 @@ settle(100) status()
 assert(strokes==26 and samples>=nearSamples+3 and visible>nearSamples)
 local durableRuns=visible
 tick(591000) settle(100) status()
-assert(samples>=nearSamples+3 and visible==durableRuns and rendered==durableRuns,"persistent ink expired")
+assert(samples>=nearSamples+3 and visible==durableRuns and rendered==durableRuns+2,"persistent paint or premade did not renew")
 dot() status() local savedSamples=samples
 emit("level_unloading") status()
 assert(rendered==0 and samples==0 and strokes==0 and active==nil)
@@ -155,7 +155,7 @@ assert(strokes==0 and samples==0 and visible==0 and rendered==1 and live[hostArt
     "joining a session retained private paint or lost the artist's premade")
 emit("level_unloading") settle(2) assert(rendered==0)
 maxLive=2048 online=false map="levels/game/test" emit("level_loaded",map) settle(150) status()
-assert(samples==savedSamples and rendered==durableRuns+1 and strokes==27,string.format("wrong or missing paint on return: %d of %d, %d shown, %d strokes",samples,savedSamples,rendered,strokes))
+assert(samples==savedSamples and rendered==durableRuns+3 and strokes==27,string.format("wrong or missing paint on return: %d of %d, %d shown, %d strokes",samples,savedSamples,rendered,strokes))
 print(string.format("PASS: %d recorded samples, %d concurrent decals, 26 strokes, return to an older wall, shared-pool recovery, artwork placement, undo, lifetime renewal and per-map restoration",allSamples,peak))
 """
 if __name__ == "__main__":

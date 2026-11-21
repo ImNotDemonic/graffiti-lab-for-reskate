@@ -159,18 +159,30 @@ def build(game, studio, author, destination, native_from=None):
             for path in sorted([*payload, patch / ".reskate-studio-patch", patch / "layout.toc"]):
                 archive.write(path, path.relative_to(patch))
             for path in ("manifest.json", "icon.png", "reskate-plugin.json", "plugin/main.lua", "plugin/surface.lua",
-                         "plugin/dock.lua", "plugin/menu.lua", "art/menu-type.png", "plugin/selector.lua", "plugin/blackbook.lua", "plugin/studio.lua",
-                         "plugin/wall_art.lua", "plugin/wall_store.lua", "plugin/wall_ink.lua", "plugin/paint.lua", "plugin/sharing.lua",
+                         "plugin/dock.lua", "plugin/menu.lua", "plugin/selector.lua", "plugin/blackbook.lua", "plugin/studio.lua",
+                         "plugin/wall_art.lua", "plugin/wall_codec.lua", "plugin/wall_store.lua", "plugin/wall_ink.lua", "plugin/paint.lua", "plugin/sharing.lua",
                          "plugin/spray_arm.lua", "plugin/spray_fx.lua", "art/spray-loop.wav", "art/spray-burst.wav",
-                         "plugin/imports.lua", "plugin/gallery.lua", "plugin/gallery_screen.lua",
+                         "plugin/media_format.lua", "plugin/playback.lua", "plugin/pattern.lua", "plugin/photo.lua", "plugin/library.lua", "plugin/library_screen.lua", "plugin/placements.lua", "plugin/map_screen.lua",
+                         "plugin/imports.lua", "plugin/gallery.lua", "plugin/gallery_dock.lua", "plugin/gallery_screen.lua",
                          "art/palette.json", "art/checker.png", "LICENSE", "art/NOTICE.md"):
                 archive.write(ROOT / path, path)
+            # ReSkate caches overlay textures by path across plugin reloads.
+            archive.write(ROOT / "art/menu-type.png", "art/menu-headings.png")
             archive.write(scratch / "catalogue.json", "art/catalogue.json")
             for sheet in sorted(scratch.glob("premades*.png")):
                 archive.write(sheet, "art/" + sheet.name)
             importer = (ROOT / "art/Import Artwork.html").read_text(encoding="utf-8")
             palette = json.loads((ROOT / "art/palette.json").read_text(encoding="utf-8"))
-            archive.writestr("art/Import Artwork.html", importer.replace("__WALL_INKS__", json.dumps(palette)))
+            importer = importer.replace("__WALL_INKS__", json.dumps(palette))
+            for token, script in [("__PREPARE_JS__", "prepare.js"), ("__PREPARE_UI_JS__", "prepare-ui.js")]:
+                importer = importer.replace(token, (ROOT / "art" / script).read_text(encoding="utf-8"))
+            archive.writestr("art/Import Artwork.html", importer)
+            for piece in catalogue:
+                with Image.open(ROOT / piece.get("source", f"art/{piece['id']}.png")) as original:
+                    original.thumbnail((384, 384), Image.Resampling.LANCZOS)
+                    path = scratch / "edit-source.png"
+                    original.save(path)
+                    archive.write(path, f"art/edit/{piece['id']}.png")
             mist_texture(scratch / "spray-mist.png")
             archive.write(scratch / "spray-mist.png", "art/spray-mist.png")
             archive.write(ROOT / "docs/THUNDERSTORE_README.md", "README.md")
