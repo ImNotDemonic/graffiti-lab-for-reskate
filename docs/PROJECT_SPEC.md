@@ -30,9 +30,12 @@ Run the full sequence on **San Vansterdam** and **Turbo Token Arcade**, an insta
 | 2. Premade artwork | A small curated catalogue and an artwork selector. | Switching designs changes the preview and a placed piece retains the design selected at confirmation. |
 | 3. Editor and personal library | A local drawing canvas and a versioned drawing format. Save, reopen and edit named drawings within the verified storage limits. | A drawing survives a game restart and reopens with its strokes, colours and proportions intact. |
 | 4. Place custom work | Test rendering a saved drawing on a wall. Compare bounded, precompiled brush stamps with offline compilation of exact images. | A saved piece can be selected from the library, previewed, placed and removed on each tested map. Document fidelity and measured frame cost. |
-| 5. Later investigations | Explore drawing directly on geometry and sharing placements in multiplayer as separate experiments. | Report feasibility, surface and network limits, and the cost of each approach before scheduling a release. |
+| 5. Direct wall painting | Open a brush in offline play and draw a freehand path directly on a nearby flat wall. Release to finish and undo a stroke as one mark. | Draw a visibly curved stroke on the San Vansterdam kiosk and a Turbo Token Arcade wall. After closing the brush, verify the stroke stays on the wall and can be removed. [Test record](MILESTONE_5.md) |
+| Later. Multiplayer sharing | Investigate sending placements and artwork between players. | Test late joiners, missing artwork, bandwidth and effect lifetimes before scheduling a release. |
 
 Persistent world placements are a separate decision from a persistent artwork library. Milestone 1 uses session-only placements.
+
+`plugin/paint.lua` casts through the current cursor, checks each sampled brush footprint with `surface.lua` and joins nearby hits on the same wall plane. Each freehand stroke is one undoable mark in the shared placement list. The brush does not write to Blackbook.
 
 ## Runtime structure
 

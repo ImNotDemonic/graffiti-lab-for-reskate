@@ -10,7 +10,9 @@ Switchback passed the preview, placement and removal playtest on the metal kiosk
 
 The Premade Art selector shows a thumbnail and larger preview of each design. Picking a new design leaves confirmed marks in place. [Selector playtest](docs/MILESTONE_2.md)
 
-The **Custom Editor** has a transparent 2:1 canvas, a freehand marker, straight lines, 16 colours, adjustable brush width and stroke undo/redo. **Blackbook** is the personal gallery for named, editable drawings. The saved piece **ridge line** survived a restart and edit, then passed preview, placement and removal on both test maps. Direct wall painting and multiplayer sharing are later investigations. [Editor playtest](docs/MILESTONE_3.md) · [Wall playtest](docs/MILESTONE_4.md)
+The **Custom Editor** has a transparent 2:1 canvas, a freehand marker, straight lines, 16 colours, adjustable brush width and stroke undo/redo. **Blackbook** is the personal gallery for named, editable drawings. The saved piece **ridge line** survived a restart and edit, then passed preview, placement and removal on both test maps. [Editor playtest](docs/MILESTONE_3.md) · [Wall playtest](docs/MILESTONE_4.md)
+
+**Wall Paint** lets you draw directly where the cursor meets a suitable wall. Freehand strokes passed in-game tests on the Blue Light Beach kiosk and a Turbo Token Arcade interior wall. Each stroke stays until removed, expired or cleared on level change. Multiplayer sharing remains planned. [Wall Paint playtest](docs/MILESTONE_5.md)
 
 ## Development setup
 
@@ -32,6 +34,9 @@ The plugin uses sandboxed **Luau** and ReSkate's `reskate.*` API. The tested bui
 | Ctrl+G | Enter or cancel aim mode using the current design. A translucent preview appears on a suitable wall within eight metres. |
 | Ctrl+P | Confirm the preview. The mark stays fixed as you move or select another design. |
 | Ctrl+R | Cancel an active preview. When idle, remove the newest confirmed mark. |
+| Ctrl+I | Open Wall Paint. Hold the left mouse button and move to draw, or tap Space to toggle paint flow. |
+| 1–8, [ / ] | With the brush up, choose a paint colour or change the width (25, 40 or 65 mm). |
+| Ctrl+Z, Esc | In Wall Paint, undo the last freehand stroke or close the brush. Closing leaves the paint on the wall. |
 
 The local limit is 16 confirmed marks and one preview. Marks clear when leaving the level and expire just before ReSkate's ten-minute limit. The console accepts `graffiti library`, `graffiti aim`, `graffiti place`, `graffiti remove` and `graffiti status`. The actions can be reassigned in ReSkate's binds. A controller binding opens the library with Back + Y, then D-pad Left / Right browses, A chooses and B closes.
 
@@ -48,7 +53,7 @@ python tools/build_author.py --sdk "C:/dev/ReSkate" --llvm "C:/dev/llvm-mingw"
 python tools/package_mod.py --game "C:/Games/ReSkate" --studio "C:/Tools/ReSkate Studio/reskate_cli.exe"
 ```
 
-The author reads the supported game data and the 512 × 512 RGBA PNGs in `art/catalogue.json`. The builder also generates 16 solid decal textures from `art/palette.json`. Preserve catalogue slots and palette order to keep asset identities and saved colours stable. Both shader lookup tables include all 19 materials. Studio compiles them into `outputs/GraffitiLab-0.4.0.zip`. The GPL offline tools derive from the gBGYo decal recipe and link ReSkate's resource readers. Their source and licence are under `tools/`. [Upstream decal author](https://github.com/gBGYo/ReSkate_blood) · [LLVM-MinGW release](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261117)
+The author reads the supported game data and the 512 × 512 RGBA PNGs in `art/catalogue.json`. The builder also generates 16 solid decal textures from `art/palette.json`. Preserve catalogue slots and palette order to keep asset identities and saved colours stable. Both shader lookup tables include all 19 materials. Studio compiles them into `outputs/GraffitiLab-0.5.0.zip`. The GPL offline tools derive from the gBGYo decal recipe and link ReSkate's resource readers. Their source and licence are under `tools/`. [Upstream decal author](https://github.com/gBGYo/ReSkate_blood) · [LLVM-MinGW release](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261117)
 
 ## Project documents
 

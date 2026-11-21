@@ -78,7 +78,7 @@ def build(game, studio, author, destination):
                 archive.write(path, path.relative_to(patch))
             for path in ("manifest.json", "reskate-plugin.json", "plugin/main.lua", "plugin/surface.lua",
                          "plugin/selector.lua", "plugin/blackbook.lua", "plugin/studio.lua",
-                         "plugin/wall_art.lua", "art/palette.json", "art/checker.png", "art/catalogue.json"):
+                         "plugin/wall_art.lua", "plugin/paint.lua", "art/palette.json", "art/checker.png", "art/catalogue.json"):
                 archive.write(ROOT / path, path)
             for piece in catalogue:
                 path = f"art/{piece['id']}.png"
@@ -92,7 +92,10 @@ def build(game, studio, author, destination):
                              "Ctrl+E opens the drawing editor. Drag on the canvas, choose a colour and size, or rename "
                              "the drawing. Ctrl+S saves to Blackbook. Ctrl+B opens the gallery. Click a saved piece "
                              "to edit it, or choose Place on wall below its thumbnail. Aim at a suitable wall, press "
-                             "Ctrl+P to confirm and Ctrl+R to remove. Your Blackbook file stays available.\n")
+                             "Ctrl+P to confirm and Ctrl+R to remove. Your Blackbook file stays available.\n\n"
+                             "Ctrl+I opens Wall Paint. Hold the left mouse button and move over a wall, or press Space "
+                             "to toggle continuous flow. Use 1-8 for colour, [ and ] for width, Ctrl+Z to undo a stroke "
+                             "and Esc to put the brush away. Wall paint lasts for the current session.\n")
             archive.write(scratch / "icon.png", "icon.png")
         with ZipFile(scratch / "GraffitiLab.zip") as archive:
             if archive.testzip():

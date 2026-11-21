@@ -1,7 +1,7 @@
 {
   "name": "GraffitiLab",
-  "version_number": "0.4.0",
+  "version_number": "0.5.0",
   "website_url": "",
-  "description": "Draw and save original graffiti in your Blackbook, and place saved or premade artwork on walls offline.",
+  "description": "Paint freehand on walls, save drawings in Blackbook, and place saved or premade graffiti in offline ReSkate.",
   "dependencies": []
 }
