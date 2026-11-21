@@ -36,6 +36,6 @@ Persistent world placements are a separate decision from a persistent artwork li
 
 ## Runtime structure
 
-`plugin/main.lua` owns the active premade design, transient preview and confirmed marks. `plugin/selector.lua` draws the Premade Art dock and `plugin/surface.lua` validates the wall footprint. `art/catalogue.json` and the three artwork PNGs feed the selector and offline asset build. `tools/` packages the compiled patch and Luau plugin.
+`plugin/main.lua` owns the active design, translucent preview and confirmed marks. A mark owns all its decal handles and one expiry time. `plugin/selector.lua` draws the Premade Art dock and `plugin/surface.lua` validates the intended rectangular footprint. `plugin/wall_art.lua` samples a saved stroke list in drawing order, merges runs of the same colour into rectangles and maps them onto the wall plane. The palette in `art/palette.json` links the editor's stored colour indices to compiled ink materials. [Milestone 4 test and limits](MILESTONE_4.md)
 
 `plugin/studio.lua` draws the editor and paginated Blackbook gallery, samples marker strokes in 2048 × 1024 design coordinates and handles undo/redo. `plugin/blackbook.lua` validates, lists, reads and saves version 1 drawing files. Each stroke stores its palette index, brush width and ordered coordinate pairs. Saving an edit retains the file ID. Four thumbnails per page and bounded stroke sizes keep the renderer within its shape budget.

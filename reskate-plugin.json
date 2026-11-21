@@ -6,7 +6,23 @@
   "effects": [
     "world/materials/decal/reskate_graffitilab/switchback_dv",
     "world/materials/decal/reskate_graffitilab/birds_dv",
-    "world/materials/decal/reskate_graffitilab/bonehead_dv"
+    "world/materials/decal/reskate_graffitilab/bonehead_dv",
+    "world/materials/decal/reskate_graffitilab/ink_01_dv",
+    "world/materials/decal/reskate_graffitilab/ink_02_dv",
+    "world/materials/decal/reskate_graffitilab/ink_03_dv",
+    "world/materials/decal/reskate_graffitilab/ink_04_dv",
+    "world/materials/decal/reskate_graffitilab/ink_05_dv",
+    "world/materials/decal/reskate_graffitilab/ink_06_dv",
+    "world/materials/decal/reskate_graffitilab/ink_07_dv",
+    "world/materials/decal/reskate_graffitilab/ink_08_dv",
+    "world/materials/decal/reskate_graffitilab/ink_09_dv",
+    "world/materials/decal/reskate_graffitilab/ink_10_dv",
+    "world/materials/decal/reskate_graffitilab/ink_11_dv",
+    "world/materials/decal/reskate_graffitilab/ink_12_dv",
+    "world/materials/decal/reskate_graffitilab/ink_13_dv",
+    "world/materials/decal/reskate_graffitilab/ink_14_dv",
+    "world/materials/decal/reskate_graffitilab/ink_15_dv",
+    "world/materials/decal/reskate_graffitilab/ink_16_dv"
   ],
   "resident": [{
     "bundle": "win32/levels/game/dingolevel_root/dingolevel_root",
@@ -20,6 +36,22 @@
     }, {
       "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_bonehead",
       "roots": ["world/materials/decal/reskate_graffitilab/bonehead_dv"]
-    }]
+    },
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_01", "roots": ["world/materials/decal/reskate_graffitilab/ink_01_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_02", "roots": ["world/materials/decal/reskate_graffitilab/ink_02_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_03", "roots": ["world/materials/decal/reskate_graffitilab/ink_03_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_04", "roots": ["world/materials/decal/reskate_graffitilab/ink_04_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_05", "roots": ["world/materials/decal/reskate_graffitilab/ink_05_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_06", "roots": ["world/materials/decal/reskate_graffitilab/ink_06_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_07", "roots": ["world/materials/decal/reskate_graffitilab/ink_07_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_08", "roots": ["world/materials/decal/reskate_graffitilab/ink_08_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_09", "roots": ["world/materials/decal/reskate_graffitilab/ink_09_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_10", "roots": ["world/materials/decal/reskate_graffitilab/ink_10_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_11", "roots": ["world/materials/decal/reskate_graffitilab/ink_11_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_12", "roots": ["world/materials/decal/reskate_graffitilab/ink_12_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_13", "roots": ["world/materials/decal/reskate_graffitilab/ink_13_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_14", "roots": ["world/materials/decal/reskate_graffitilab/ink_14_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_15", "roots": ["world/materials/decal/reskate_graffitilab/ink_15_dv"]},
+    {"name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_ink_16", "roots": ["world/materials/decal/reskate_graffitilab/ink_16_dv"]}]
   }]
 }

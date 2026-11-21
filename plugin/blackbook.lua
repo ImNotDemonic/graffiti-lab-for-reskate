@@ -1,8 +1,7 @@
 -- One file is one editable drawing. The file name is its stable ID across renames.
 local book = {
     width = 2048, height = 1024, maxPoints = 448, maxStrokes = 96,
-    palette = {"#F4F1EA", "#121212", "#FF5A1F", "#FFC21A", "#C8F03A", "#2E6BFF", "#FF3D8B", "#D9D9D4",
-        "#1FB57A", "#00B8D9", "#7A3CFF", "#E8262A", "#8A4B2A", "#FFE9C7", "#6E6C68", "#3A3B3F"},
+    palette = assert(reskate.package.read_json("art/palette.json")),
 }
 
 local function integer(n, lo, hi)

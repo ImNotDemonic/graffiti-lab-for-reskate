@@ -1,17 +1,30 @@
 local surface = require("surface")
 local makeSelector = require("selector")
-local studio = require("studio")()
+local makeStudio = require("studio")
+local wallArt = require("wall_art")
 local pieces = assert(reskate.package.read_json("art/catalogue.json"))
 local fx = reskate.effects
 local assetRoot = "world/materials/decal/reskate_graffitilab/"
 local selected, aiming, preview = 1, false, nil
+local design = pieces[selected]
 local placed = {}
 local lifetime, capacity = 590000, 16
 local elapsed, sinceSample, epoch, assetError = 0, 0, nil, nil
-local selector
+local selector, studio
+local handleBudget = 768
+
+local function release(mark)
+    for _, handle in mark.handles do fx.release(handle) end
+end
+
+local function usedHandles()
+    local count = 0
+    for _, mark in placed do count += #mark.handles end
+    return count
+end
 
 local function discardPreview()
-    if preview then fx.release(preview.handle) end
+    if preview then release(preview) end
     preview, assetError = nil, nil
 end
 
@@ -34,34 +47,70 @@ local function ready()
 end
 
 local function updatePreview()
-    local transform = surface(reskate.world, reskate.camera.get(), reskate.level.current)
+    local transform = surface(reskate.world, reskate.camera.get(), reskate.level.current, design.width, design.height)
     if not transform then discardPreview() return false end
+    local parts = design.parts
     if preview then
-        fx.move(preview.handle, transform)
+        local changed = false
+        for i = 1,16 do
+            if math.abs(transform[i]-preview.transform[i]) > 0.00001 then changed = true break end
+        end
+        if changed then
+            for i,h in preview.handles do fx.move(h, if parts then wallArt.transform(transform,parts[i]) else transform) end
+            preview.transform = transform
+        end
         return true
     end
-    local piece = pieces[selected]
-    local handle, why = fx.decal(assetRoot .. piece.id .. "_dv", transform)
-    if not handle then
-        if why ~= assetError then reskate.log(piece.name .. " preview: " .. tostring(why)) end
-        assetError = why
+    local count = if parts then #parts else 1
+    if usedHandles()+count > handleBudget then
+        if assetError ~= "budget" then reskate.log("Remove a mark to make room for this drawing") end
+        assetError = "budget"
         return false
     end
-    fx.opacity(handle, 0.45)
-    preview = {id = piece.id, handle = handle, expires = elapsed + lifetime}
+    local mark = {id=design.id,handles={},transform=transform,expires=elapsed+lifetime}
+    for i=1,count do
+        local asset = if parts then parts[i].asset else design.id
+        local matrix = if parts then wallArt.transform(transform,parts[i]) else transform
+        local handle, why = fx.decal(assetRoot .. asset .. "_dv", matrix)
+        if not handle then
+            release(mark)
+            if why ~= assetError then reskate.log(design.name .. " preview: " .. tostring(why)) end
+            assetError = why
+            return false
+        end
+        table.insert(mark.handles,handle)
+        fx.opacity(handle,0.45)
+    end
+    preview = mark
     assetError = nil
     return true
 end
 
-local function aim(index)
+local function aim(piece)
     if not ready() then return end
-    if selected ~= index then discardPreview() end
-    selected, aiming = index, true
+    if design ~= piece then discardPreview() end
+    design, aiming = piece, true
+    local start = os.clock()
     local visible = updatePreview()
-    reskate.log(pieces[index].name .. (if visible then " preview active" else " selected, waiting for a wall"))
+    reskate.log(piece.name .. (if visible then " preview active" else " selected, waiting for a wall"))
+    if visible and piece.parts then
+        reskate.log(string.format("Blackbook preview %s: %d decals, %d x %d, initial update %.2f ms",
+            piece.id,#piece.parts,piece.resolution,piece.resolution/2,(os.clock()-start)*1000))
+    end
 end
 
-selector = makeSelector(pieces, aim, studio.open)
+studio = makeStudio(function(file,doc)
+    local parts, resolution = wallArt.compile(doc)
+    if not parts then return false,resolution end
+    if usedHandles()+#parts > handleBudget or #placed >= capacity then return false,"Remove a wall mark first." end
+    studio.close()
+    aim({id=file,name=doc.name,parts=parts,resolution=resolution,width=wallArt.width,height=wallArt.height})
+    return true
+end)
+selector = makeSelector(pieces, function(index)
+    selected = index
+    aim(pieces[index])
+end, studio.open)
 
 local function place()
     if not aiming then return end
@@ -70,10 +119,9 @@ local function place()
         return
     end
     if not updatePreview() then reskate.log("Placement needs a valid preview") return end
-    fx.opacity(preview.handle, 1)
-    -- Transfer ownership of this exact handle. Future selections only replace the preview.
+    for _,handle in preview.handles do fx.opacity(handle,1) end
     table.insert(placed, preview)
-    reskate.log("Placed " .. preview.id .. " handle " .. preview.handle)
+    reskate.log("Placed " .. preview.id .. " handle " .. preview.handles[1] .. " (" .. #preview.handles .. " decals)")
     preview, aiming = nil, false
 end
 
@@ -83,8 +131,8 @@ local function remove()
         aiming = false
     elseif #placed > 0 then
         local piece = table.remove(placed)
-        fx.release(piece.handle)
-        reskate.log("Removed " .. piece.id .. " handle " .. piece.handle)
+        release(piece)
+        reskate.log("Removed " .. piece.id .. " handle " .. piece.handles[1] .. " (" .. #piece.handles .. " decals)")
     end
 end
 
@@ -103,7 +151,7 @@ local actions = {
     ["Open Blackbook"] = function() openStudio("gallery") end,
     ["Open Graffiti Lab"] = openLibrary,
     ["Open Graffiti Lab on pad"] = openLibrary,
-    ["Aim Switchback"] = function() if aiming then remove() else aim(selected) end end,
+    ["Aim Switchback"] = function() if aiming then remove() else aim(design) end end,
     ["Place Switchback"] = place,
     ["Remove Switchback"] = remove,
 }
@@ -125,9 +173,9 @@ reskate.console.command("graffiti", "library, editor, blackbook, aim, place, rem
     if commands[args[1]] then action(commands[args[1]]) return end
     local available = ready()
     local marks = {}
-    for _, mark in placed do table.insert(marks, mark.id .. "#" .. mark.handle) end
+    for _, mark in placed do table.insert(marks, mark.id .. "#" .. mark.handles[1]) end
     reskate.log(string.format("ready=%s selected=%s preview=%s placed=[%s]", tostring(available),
-        pieces[selected].id, if preview then preview.id .. "#" .. preview.handle else "none", table.concat(marks, ", ")))
+        design.id, if preview then preview.id .. "#" .. preview.handles[1] else "none", table.concat(marks, ", ")))
 end)
 reskate.on("level_unloading", reset)
 reskate.on("unload", reset)
@@ -137,7 +185,7 @@ reskate.on("tick", function(dt)
     elapsed += dt
     -- Placed handles keep their creation deadline, even when a preview was held for a while.
     for i = #placed, 1, -1 do
-        if elapsed >= placed[i].expires then fx.release(table.remove(placed, i).handle) end
+        if elapsed >= placed[i].expires then release(table.remove(placed, i)) end
     end
     if not aiming then return end
     if preview and elapsed >= preview.expires then discardPreview() end

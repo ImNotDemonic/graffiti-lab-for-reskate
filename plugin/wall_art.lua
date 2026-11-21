@@ -1,0 +1,102 @@
+-- Rasterise once per selection. Flat, non-overlapping rectangles preserve stroke
+-- order and keep translucent previews from getting darker at intersections.
+local art = {width = 1.0, height = 0.5, maxParts = 256}
+local book = require("blackbook")
+
+local function paint(grid, w, h, ax, ay, bx, by, radius, colour)
+    local dx, dy = bx-ax, by-ay
+    local length2 = dx*dx + dy*dy
+    local y0 = math.max(0, math.ceil(math.min(ay,by)-radius-0.5))
+    local y1 = math.min(h-1, math.floor(math.max(ay,by)+radius-0.5))
+    for y=y0,y1 do
+        local py = y+0.5
+        local first, last = 0, 1
+        if dy ~= 0 then
+            local a,b = (py-radius-ay)/dy,(py+radius-ay)/dy
+            first,last = math.clamp(math.min(a,b),0,1),math.clamp(math.max(a,b),0,1)
+        end
+        local xa,xb = ax+first*dx,ax+last*dx
+        local x0 = math.max(0,math.ceil(math.min(xa,xb)-radius-0.5))
+        local x1 = math.min(w-1,math.floor(math.max(xa,xb)+radius-0.5))
+        for x=x0,x1 do
+            local px=x+0.5
+            local t=if length2==0 then 0 else math.clamp(((px-ax)*dx+(py-ay)*dy)/length2,0,1)
+            if (px-ax-t*dx)^2 + (py-ay-t*dy)^2 <= radius*radius then grid[y*w+x+1]=colour end
+        end
+    end
+end
+
+local function raster(doc,w)
+    local h=w/2
+    local grid=table.create(w*h,0)
+    local scale=w/book.width
+    for _,stroke in doc.strokes do
+        local xy=stroke.xy
+        -- Keep a thin marker visible even when it falls between pixel centres.
+        local r=math.max(0.72,stroke.size*scale/2)
+        local ax,ay=xy[1]*scale,xy[2]*scale
+        if #xy==2 then paint(grid,w,h,ax,ay,ax,ay,r,stroke.colour) end
+        for i=3,#xy,2 do
+            local bx,by=xy[i]*scale,xy[i+1]*scale
+            paint(grid,w,h,ax,ay,bx,by,r,stroke.colour)
+            ax,ay=bx,by
+        end
+    end
+    return grid
+end
+
+local function rectangles(grid,w)
+    local parts,previous={},{}
+    for y=0,w/2-1 do
+        local current={}
+        local x=0
+        while x<w do
+            local first,c=x,grid[y*w+x+1]
+            repeat x+=1 until x==w or grid[y*w+x+1]~=c
+            if c~=0 then
+                local key=(c*(w+1)+first)*(w+1)+x
+                local part=previous[key]
+                if part then
+                    part.h+=1
+                else
+                    if #parts==art.maxParts then return nil end
+                    part={x=first,y=y,w=x-first,h=1,colour=c}
+                    table.insert(parts,part)
+                end
+                current[key]=part
+            end
+        end
+        previous=current
+    end
+    return parts
+end
+
+function art.compile(doc)
+    if #doc.strokes==0 then return nil,"Draw and save at least one stroke first." end
+    for _,w in {128,64,32,16} do
+        local parts=rectangles(raster(doc,w),w)
+        if parts then
+            for _,p in parts do
+                p.x=(p.x+p.w/2)/w-0.5
+                p.y=(p.y+p.h/2)/(w/2)-0.5
+                p.w/=w
+                p.h/=(w/2)
+                p.asset=string.format("ink_%02d",p.colour)
+            end
+            return parts,w
+        end
+    end
+    error("16 by 8 pixels always fit the rectangle budget")
+end
+
+function art.transform(m,p)
+    local t=table.clone(m)
+    for i=1,3 do
+        t[12+i]=m[12+i]+p.x*m[i]+p.y*m[8+i]
+        t[i]=m[i]*p.w
+        t[8+i]=m[8+i]*p.h
+    end
+    return t
+end
+
+return art

@@ -45,6 +45,13 @@ def build(game, studio, author, destination):
                     icon = Image.new("RGBA", image.size, "#e3e9da")
                     icon.alpha_composite(image)
                     icon.resize((256, 256), Image.Resampling.LANCZOS).save(scratch / "icon.png")
+        # Slot 16 onward is reserved for Blackbook's stable, one-based palette.
+        palette = json.loads((ROOT / "art/palette.json").read_text())
+        for index, colour in enumerate(palette, start=1):
+            name = f"ink_{index:02}"
+            pixels = scratch / f"{name}.rgba"
+            pixels.write_bytes(Image.new("RGBA", (512, 512), colour).tobytes())
+            args.extend([str(15 + index), name, pixels])
         subprocess.run(args, check=True)
         rows = json.loads((authored / "resources.json").read_text())["resources"]
         templates = [r["name"] for r in rows if r.get("root_type") == "EnvironmentDecalVolumeTemplateData"]
@@ -71,7 +78,7 @@ def build(game, studio, author, destination):
                 archive.write(path, path.relative_to(patch))
             for path in ("manifest.json", "reskate-plugin.json", "plugin/main.lua", "plugin/surface.lua",
                          "plugin/selector.lua", "plugin/blackbook.lua", "plugin/studio.lua",
-                         "art/checker.png", "art/catalogue.json"):
+                         "plugin/wall_art.lua", "art/palette.json", "art/checker.png", "art/catalogue.json"):
                 archive.write(ROOT / path, path)
             for piece in catalogue:
                 path = f"art/{piece['id']}.png"
@@ -84,7 +91,8 @@ def build(game, studio, author, destination):
                              "preview or removes the last mark. Esc closes the selector.\n\n"
                              "Ctrl+E opens the drawing editor. Drag on the canvas, choose a colour and size, or rename "
                              "the drawing. Ctrl+S saves to Blackbook. Ctrl+B opens the gallery. Click a saved piece "
-                             "to edit it. Custom drawings stay in ReSkate's private plugin data across restarts.\n")
+                             "to edit it, or choose Place on wall below its thumbnail. Aim at a suitable wall, press "
+                             "Ctrl+P to confirm and Ctrl+R to remove. Your Blackbook file stays available.\n")
             archive.write(scratch / "icon.png", "icon.png")
         with ZipFile(scratch / "GraffitiLab.zip") as archive:
             if archive.testzip():

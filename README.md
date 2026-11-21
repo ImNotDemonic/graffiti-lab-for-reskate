@@ -2,7 +2,7 @@
 
 A ReSkate graffiti mod with premade artwork, custom drawing and surface placement.
 
-Graffiti Lab is an offline ReSkate mod for placing premade graffiti on walls. Its in-game library includes **Switchback**, a mint arrow stencil, **Birds**, three swifts over a cobalt sun, and **Bonehead**, a skull in a blaze-orange cap.
+Graffiti Lab places saved Blackbook drawings and premade graffiti on walls in offline ReSkate. The premade library includes **Switchback**, a mint arrow stencil, **Birds**, three swifts over a cobalt sun, and **Bonehead**, a skull in a blaze-orange cap.
 
 ## Current status
 
@@ -10,7 +10,7 @@ Switchback passed the preview, placement and removal playtest on the metal kiosk
 
 The Premade Art selector shows a thumbnail and larger preview of each design. Picking a new design leaves confirmed marks in place. [Selector playtest](docs/MILESTONE_2.md)
 
-The **Custom Editor** has a transparent 2:1 canvas, a freehand marker, straight lines, 16 colours, adjustable brush width and stroke undo/redo. **Blackbook** is the personal gallery for named, editable drawings. A six-stroke drawing survived a full game restart and reopened for a seventh stroke. Placing a Blackbook drawing on a wall is milestone 4. Direct wall painting and multiplayer sharing are later investigations. [Editor playtest](docs/MILESTONE_3.md)
+The **Custom Editor** has a transparent 2:1 canvas, a freehand marker, straight lines, 16 colours, adjustable brush width and stroke undo/redo. **Blackbook** is the personal gallery for named, editable drawings. The saved piece **ridge line** survived a restart and edit, then passed preview, placement and removal on both test maps. Direct wall painting and multiplayer sharing are later investigations. [Editor playtest](docs/MILESTONE_3.md) · [Wall playtest](docs/MILESTONE_4.md)
 
 ## Development setup
 
@@ -26,7 +26,7 @@ The plugin uses sandboxed **Luau** and ReSkate's `reskate.*` API. The tested bui
 | --- | --- |
 | Ctrl+E | Open the Custom Editor. Drag with Marker or click two endpoints with Line. Click a swatch or the size controls to change the brush. |
 | Ctrl+S | Save the current drawing to Blackbook. **Rename drawing** changes its title. A later save updates the same entry. |
-| Ctrl+B | Open Blackbook. Click a thumbnail to edit its strokes or choose **New drawing** for a blank canvas. |
+| Ctrl+B | Open Blackbook. Click a thumbnail to edit, **Place on wall** below it to preview, or **New drawing** for a blank canvas. |
 | Ctrl+Z / Ctrl+Y | Undo or redo a stroke in the editor. Esc closes the screen and keeps the current draft for this session. |
 | Ctrl+L | Open Premade Art. Click a thumbnail or use Left / Right to browse. Click **Place on Wall** or press Enter to aim with that design. Esc closes the selector. |
 | Ctrl+G | Enter or cancel aim mode using the current design. A translucent preview appears on a suitable wall within eight metres. |
@@ -37,6 +37,8 @@ The local limit is 16 confirmed marks and one preview. Marks clear when leaving 
 
 The editor and Blackbook use mouse and keyboard. They are also reachable from the bottom of Premade Art or with `graffiti editor` and `graffiti blackbook`. Use **Save to Blackbook** before quitting. Each drawing is a versioned JSON file under `Mods/.reskate_plugin_data/GraffitiLab/`, separate from the installed mod. The editor allows up to 96 strokes and 448 sampled points per drawing.
 
+For a saved drawing, aim at a continuous flat wall with room for a 1 × 0.5 m canvas. Ctrl+P confirms the preview. Ctrl+R cancels it or removes the most recent placement while idle. The saved strokes stay in Blackbook. Wall copies start at 128 × 64 pixels and step down in resolution for more complex artwork. The mod allows 256 decal rectangles per drawing and 768 live decals across its placements and preview.
+
 ## Build the test ZIP
 
 On Windows x64, use Python 3.11+ with Pillow, a checkout of ReSkate at `8e4aefca153ce9cb622074ae4de05f81fa71d09c` and the x64 UCRT edition of LLVM-MinGW (`20261117` was used). The two commands below run from this checkout. Replace the external paths with your local folders.
@@ -46,7 +48,7 @@ python tools/build_author.py --sdk "C:/dev/ReSkate" --llvm "C:/dev/llvm-mingw"
 python tools/package_mod.py --game "C:/Games/ReSkate" --studio "C:/Tools/ReSkate Studio/reskate_cli.exe"
 ```
 
-The author reads the supported game data and the 512 × 512 RGBA PNGs in `art/catalogue.json`. Each entry's slot reserves stable private asset identities. Keep existing slots when changing display order. The two shared lookup tables are patched once with all three materials. Studio compiles the resources into `outputs/GraffitiLab-0.3.0.zip`. The GPL offline tools derive from the gBGYo decal recipe and link ReSkate's resource readers. Their source and licence are under `tools/`. [Upstream decal author](https://github.com/gBGYo/ReSkate_blood) · [LLVM-MinGW release](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261117)
+The author reads the supported game data and the 512 × 512 RGBA PNGs in `art/catalogue.json`. The builder also generates 16 solid decal textures from `art/palette.json`. Preserve catalogue slots and palette order to keep asset identities and saved colours stable. Both shader lookup tables include all 19 materials. Studio compiles them into `outputs/GraffitiLab-0.4.0.zip`. The GPL offline tools derive from the gBGYo decal recipe and link ReSkate's resource readers. Their source and licence are under `tools/`. [Upstream decal author](https://github.com/gBGYo/ReSkate_blood) · [LLVM-MinGW release](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261117)
 
 ## Project documents
 

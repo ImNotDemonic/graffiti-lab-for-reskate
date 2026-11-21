@@ -4,7 +4,7 @@ local ink, muted, blaze, panel = "#F2EFE9", "#B5B2AC", "#FF5A1F", "#0D0E10F5"
 local canvas = {672, 252, 1152, 576}
 local perPage = 4
 
-return function()
+return function(onPlace)
     local mode, doc, file, original = nil, book.new(), nil, nil
     local dirty, rename, pending = false, nil, nil
     local colour, width, redo, stroke = 3, 28, {}, nil
@@ -170,7 +170,13 @@ return function()
                 if card.doc then picture(card.doc,x,y,234) end
                 local name = if card.doc then card.doc.name else "Unreadable drawing"
                 label(x+8,y+126,if #name>18 then name:sub(1,17).."…" else name,"bold",18)
-                target(x,y,234,164,function() edit(card) end)
+                target(x,y,234,160,function() edit(card) end)
+                if card.doc then
+                    button(x,y+161,234,28,"Place on wall",function()
+                        local ok,why = onPlace(card.file,card.doc)
+                        if not ok then note = why end
+                    end)
+                end
             end
             if #files == 0 then label(48,274,"Your Blackbook is empty.","heading",28) end
             if #files > perPage then

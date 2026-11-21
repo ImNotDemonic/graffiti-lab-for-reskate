@@ -19,8 +19,9 @@ local function structuralReceiver(object, level)
     return map ~= nil and string.match(name, "([^/]+)$") == map
 end
 
-return function(world, view, currentLevel)
+return function(world, view, currentLevel, width, height)
     if not view then return nil end
+    width, height = width or size, height or size
     local origin, forward = view.position, view.forward
     local function sample(start)
         local ray = world.probe(start, start + forward * reach)
@@ -48,14 +49,14 @@ return function(world, view, currentLevel)
     local down = vector.cross(right, normal)
     for x = -1, 1, 2 do
         for z = -1, 1, 2 do
-            local corner = centre + (right * x + down * z) * (size / 2)
+            local corner = centre + right * (x * width / 2) + down * (z * height / 2)
             local cast = world.probe(origin, corner + vector.normalize(corner - origin) * 0.10)
             if cast.status ~= "hit" or vector.magnitude(cast.position - corner) > tolerance then
                 return nil
             end
         end
     end
-    local x, y, z = right * size, normal * 0.045, down * size
+    local x, y, z = right * width, normal * 0.045, down * height
     local p = centre + normal * 0.006
     return {x.x, x.y, x.z, 0, y.x, y.y, y.z, 0, z.x, z.y, z.z, 0, p.x, p.y, p.z, 1}
 end
