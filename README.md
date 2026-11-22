@@ -1,6 +1,22 @@
 # Graffiti Lab
 
-Choose from 46 premade designs, draw your own in Blackbook, or spray directly onto a wall in ReSkate. Open Graffiti Lab with **Ctrl+L** or **Back + Y**.
+Paint walls in ReSkate with 46 premades, your own Blackbook drawings or a freehand spray can. Press **Ctrl+L** or **Back + Y** to open Graffiti Lab. Choose **Public Artworks** to share your designs and download other players’ pieces.
+
+## What's included since 0.6.12
+
+### 0.7.0 introduced Public Artworks
+
+Open **Graffiti Lab → Public Artworks** to find pieces other players have shared. Guests can search by title, creator or tag, then download a piece to **Premade Art → My imports** and place it on a wall. The artist can be offline or skating in a different session. Once downloaded, the piece works offline too.
+
+With a creator profile, you can publish an imported design or a saved Blackbook drawing with a title, description and tags. You can also unpublish your own pieces or report an entry. Publishing a drawing keeps the editable original in your Blackbook.
+
+### 0.8.0 expanded the gallery, library and editor
+
+- **See the art before downloading.** Public Artworks gained thumbnail cards showing the actual artwork and a larger preview when you select a card.
+- **Find and organise your collection.** Artwork Library brought premades, imports and Blackbook drawings into one searchable view with favourites, folders and recently used pieces. You can import up to 12 prepared designs as a collection and undo that import as one action.
+- **Edit art already on the wall.** Resize or rotate a premade while aiming. From the map placement list, move, stretch, rotate, duplicate or remove an individual piece. Offline placements keep their position and settings across map changes and restarts. Placement history lets you undo an edit to the wall without changing your drawing.
+- **Prepare images and draw patterns.** Crop or rotate an image from disk, trim transparent margins, remove an edge border and check transparency before importing. In Blackbook, repeat a seamless tile or draw with left/right, four-way, radial or rotational symmetry.
+- **Keep painting and keep your saves.** Large freehand paintings use less memory. Existing wall-paint saves still load, and saving advanced edits to an older Blackbook drawing keeps a recovery copy. The premade placement crash was fixed, and the selector returns to the same piece after you place it.
 
 ## What's new in 0.8.1
 
@@ -8,8 +24,6 @@ Choose from 46 premade designs, draw your own in Blackbook, or spray directly on
 - **Bubble Throw keeps its lettering when arched.** The preview and the wall now use the original artwork texture, including the outlines, dots and drips. An **81% arch** kept its shape after restarting ReSkate on the Blue Light Beach kiosk in **San Vansterdam** and the green wall in **Turbo Token Arcade**. Other reshapes and copies downloaded from the public gallery use 16 inks, which can simplify fine detail.
 - **The editing screens now match the rest of Graffiti Lab.** The Artwork Library shows thumbnail cards. The map placement and reshape screens use the same black-and-orange sidebar, and the reshape preview shows the artwork against a checkerboard.
 - **Fixed a crash during map travel.** The plugin now releases its artwork effects when leaving a level. This release also retires in-game photo capture and sounds attached to artwork. You can still import pictures from disk and adjust the volume of the spray can.
-
-**Also included from 0.8.0.** A fix for a crash when confirming a premade keeps the selector available after placement. Public Artworks gained thumbnails and a larger preview. Large freehand paintings use less memory, existing wall-paint saves still load, and saving advanced edits to an older Blackbook drawing keeps a recovery copy. The library, placement, import and pattern tools from that update are listed below.
 
 ## Features
 
