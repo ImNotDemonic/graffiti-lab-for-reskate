@@ -32,6 +32,12 @@ With a creator profile, you can publish an imported design or a saved Blackbook 
 - **The editing screens now match the rest of Graffiti Lab.** The Artwork Library shows thumbnail cards. The map placement and reshape screens use the same black-and-orange sidebar, and the reshape preview shows the artwork against a checkerboard.
 - **Fixed a crash during map travel.** The plugin now releases its artwork effects when leaving a level. This release also retires in-game photo capture and sounds attached to artwork. You can still import pictures from disk and adjust the volume of the spray can.
 
+## Possible mod conflicts
+
+Compatibility with **PoseBox** and **SunJays Low Cam** still needs testing. The 0.8.2 wall tests did not check either mod individually. A missing brush cursor or a premade that won’t place is not enough to identify either mod as the cause.
+
+To check on your setup, try Wall Paint and the same premade on the same wall with both mods disabled. If both tools work, enable PoseBox alone and repeat, then try SunJays Low Cam alone. If the issue only happens with both enabled, mention that when reporting it. Include the map, the mod versions and whether the brush ring or **Wall ready** prompt appeared.
+
 ## Features
 
 - **Browse 46 premades.** Choose from lettering, skate designs, characters, phrases, stencils and experimental pieces. Filter by category or search by title, lettering or pack number. After you place one, the selector reopens on the same design, search and page.
