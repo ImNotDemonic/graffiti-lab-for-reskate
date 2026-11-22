@@ -20,10 +20,9 @@ return function(onPlace,onBack,mapMarks,editMap)
     local brush={mode="Off",x=50,y=50,angle=90,sectors=4}
     local toolsOpen,originPick=false,false
     local cacheDoc,cacheKey,cacheParts,drawingPreview
-    local mediaOpen,frameIndex,playing,playStart,previewVoice=false,1,false,0,nil
+    local mediaOpen,frameIndex,playing,playStart=false,1,false,0
     local function stopPreview()
         playing=false
-        if previewVoice then reskate.audio.stop(previewVoice) previewVoice=nil end
     end
     local function currentFrame()
         return {strokes=doc.strokes,tile=doc.tile}
@@ -260,7 +259,7 @@ return function(onPlace,onBack,mapMarks,editMap)
             button(48,549,480,49,if rename then "Keep name   /   Enter" else "Rename drawing",nameField)
             button(48,607,480,49,"Open Blackbook",function() if rename then finishName() end gallery(1) end)
             button(48,669,255,44,"Tiles and symmetry",function() toolsOpen=not toolsOpen end,toolsOpen)
-            button(312,669,216,44,"Frames and sound",function() mediaOpen=true end,mediaOpen)
+            button(312,669,216,44,"Animation frames",function() mediaOpen=true end,mediaOpen)
             if toolsOpen then
                 local function tileChange(t)
                     table.insert(history,{setting=true,before=doc.tile,after=t})
@@ -380,7 +379,7 @@ return function(onPlace,onBack,mapMarks,editMap)
             local timing=if a then a.frameMs else 350
             local shown=if playing then 1+math.floor((reskate.time.now()-playStart)/timing)%#frames else frameIndex
             rect(600,50,1250,910,"#101113")
-            label(632,80,"Animation and sound","heading",36)
+            label(632,80,"Animation frames","heading",36)
             label(632,129,"Selected frame "..frameIndex.." of "..#frames.."    /    "..timing.." ms per frame","bold",18,muted)
             for i,f in frames do
                 local x=632+(i-1)*145
@@ -416,28 +415,6 @@ return function(onPlace,onBack,mapMarks,editMap)
             button(1042,322,190,44,"Slower",function() local anim=timeline() anim.frameMs=math.min(5000,anim.frameMs+50) dirty=true end)
             d:image("art/checker.png",p(632,390),p(1192,670))
             picture(frames[shown],632,390,560)
-            local snd=doc.sound
-            button(1220,390,570,44,"Sound: "..(snd and snd.id or "Off"),function()
-                stopPreview()
-                if not snd then doc.sound={id="spray-burst",trigger="interact",volume=30,radius=6,cooldown=2}
-                elseif snd.id=="spray-burst" then snd.id="spray-loop" else doc.sound=nil end
-                dirty=true
-            end)
-            if snd then
-                button(1220,442,570,44,"Trigger: "..snd.trigger,function()
-                    snd.trigger=if snd.trigger=="interact" then "approach" elseif snd.trigger=="approach" then "nearby-loop" else "interact"
-                    dirty=true
-                end)
-                button(1220,494,280,44,"Volume: "..snd.volume.."%",function() snd.volume=(snd.volume+10)%110 dirty=true end)
-                button(1510,494,280,44,"Radius: "..snd.radius.." m",function() snd.radius=snd.radius%20+1 dirty=true end)
-                button(1220,546,280,44,"Cooldown: "..snd.cooldown.." s",function() snd.cooldown=snd.cooldown%10+1 dirty=true end)
-                button(1510,546,280,44,"Preview sound",function()
-                    if previewVoice then reskate.audio.stop(previewVoice) end
-                    local volume=require("playback").volume()*snd.volume/10000
-                    if volume>0 then previewVoice=reskate.audio.play("art/"..snd.id..".wav",{position="skater",volume=volume}) end
-                end)
-            end
-            label(632,700,"Ctrl+J interacts with the nearest sound piece in range.","body",19,muted)
             button(632,754,330,52,"Save to Blackbook",save,true)
             button(982,754,330,52,"Return to drawing",function() stopPreview() mediaOpen=false end)
             label(632,830,note,"body",19,muted)

@@ -83,7 +83,7 @@ return function(onBack,localScreens)
         s.preview={parts=parts,aspect=aspect}
         local last=utf8.offset(name,math.min(utf8.len(name) or 1,60)+1)
         s.title,s.description,s.tags=if last then name:sub(1,last-1) else name,"",""
-        s.note=if media then string.format("%d frame(s) • %d ms • %s",#media.frames,media.frameMs,media.sound and media.sound.id or "Silent") else "Preview your artwork before publishing."
+        s.note=if media then string.format("%d frame(s) • %d ms",#media.frames,media.frameMs) else "Preview your artwork before publishing."
     end
     function actions.publish()
         if s.busy or not s.raw or not s.profile or trim(s.title)=="" then s.note="Choose a profile, piece and title." return end
@@ -123,17 +123,32 @@ return function(onBack,localScreens)
         if open then clear() reskate.ui.close() end
     end
     function actions.back() close() onBack() end
-    reskate.ui.screen(localScreen,function(ui) if open and localView then localView.panel(ui) end end,{dock="left",width=.36})
+    local function backLocal()
+        if localView and localView.back and localView.back() then return end
+        actions.back()
+    end
+    local sidebar=require("library_dock")(backLocal)
+    reskate.ui.screen(localScreen,function() end,{panel=false})
     reskate.on("screen_closed",function(name)
-        if open and name==(if localView then localScreen else publicScreen) then clear() onBack() end
+        if open and name==(if localView then localScreen else publicScreen) then
+            if localView and localView.back and localView.back() then reskate.ui.open(localScreen) return end
+            clear() onBack()
+        end
     end)
-    reskate.on("draw",function(d) if open and not localView then overlay.draw(d) end end)
-    reskate.on("tick",function() if open and not localView then overlay.tick() end end)
+    reskate.on("draw",function(d)
+        if not open then return end
+        if localView then sidebar.draw(d,if localView.title then localView.title() else "Map Placements",localView.panel)
+        else overlay.draw(d) end
+    end)
+    reskate.on("tick",function()
+        if not open then return end
+        if localView then sidebar.tick() else overlay.tick() end
+    end)
     return {open=function(view)
         if open then close() end
         open=true overlay.reset()
         if type(view)=="string" and localScreens and localScreens[view] then
-            localView=localScreens[view] localView.open() reskate.ui.open(localScreen) return
+            localView=localScreens[view] sidebar.reset() localView.open() reskate.ui.open(localScreen) return
         end
         profiles() s.rows={} s.page=1 s.more=false
         reskate.ui.open(publicScreen) actions.tab(1)

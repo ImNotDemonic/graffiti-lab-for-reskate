@@ -34,12 +34,6 @@ export function artwork(input) {
   const proportions = frames.map(raw => raw.split("\n",1)[0].split(" ").slice(-2).map(Number));
   if (proportions.some(([w,h]) => w*proportions[0][1] !== h*proportions[0][0])) failure(422,"Frames must share an aspect ratio");
   const asset = {version:1, kind:"ink", frames, frameMs:input.frameMs};
-  if (input.sound) {
-    const s = input.sound;
-    if (!["spray-burst","spray-loop"].includes(s.id) || !["interact","approach","nearby-loop"].includes(s.trigger)
-        || !integer(s.volume,0,100) || !integer(s.radius,1,20) || !integer(s.cooldown,1,60)) failure(422,"Unsupported sound settings");
-    asset.sound = {id:s.id, trigger:s.trigger, volume:s.volume, radius:s.radius, cooldown:s.cooldown};
-  }
   return asset;
 }
 
@@ -101,7 +95,7 @@ async function route(request, env) {
     }
     const item = await env.DB.prepare("SELECT "+columns+",a.asset FROM artworks a JOIN creators c ON c.id=a.owner WHERE a.id=? AND a.visible=1").bind(id).first();
     if (!item) failure(404,"Artwork is unavailable");
-    return response(200,{...tile(item),asset:JSON.parse(item.asset),downloadedBy});
+    return response(200,{...tile(item),asset:artwork(JSON.parse(item.asset)),downloadedBy});
   }
   if (request.method !== "POST" || !["/v1/publish","/v1/unpublish","/v1/report"].includes(path)) failure(404,"Unknown gallery endpoint");
   const data = await body(request);

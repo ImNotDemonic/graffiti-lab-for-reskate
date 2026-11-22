@@ -1,14 +1,12 @@
 local media={}
 local function integer(n,a,b) return type(n)=="number" and n%1==0 and n>=a and n<=b end
-function media.sound(s)
-    return s==nil or (type(s)=="table" and (s.id=="spray-burst" or s.id=="spray-loop")
-        and (s.trigger=="interact" or s.trigger=="approach" or s.trigger=="nearby-loop")
-        and integer(s.volume,0,100) and integer(s.radius,1,20) and integer(s.cooldown,1,60))
+function media.visual(asset)
+    return {version=asset.version,kind=asset.kind,frameMs=asset.frameMs,frames=asset.frames}
 end
 function media.validate(asset,decode)
     if type(asset)~="table" or asset.version~=1 or asset.kind~="ink" or type(asset.frames)~="table" or
-        not integer(#asset.frames,1,8) or not integer(asset.frameMs,100,5000) or not media.sound(asset.sound) then
-        return nil,"Unsupported artwork version, timing, sound or frame count."
+        not integer(#asset.frames,1,8) or not integer(asset.frameMs,100,5000) then
+        return nil,"Unsupported artwork version, timing or frame count."
     end
     local frames,ratio={},nil
     for i,raw in asset.frames do
@@ -36,6 +34,6 @@ function media.fromDrawing(doc,wall)
         if not parts then return nil,"Frame "..i..": "..tostring(w) end
         frames[i]=media.frame(parts,w)
     end
-    return {version=1,kind="ink",frames=frames,frameMs=if doc.animation then doc.animation.frameMs else 250,sound=doc.sound}
+    return {version=1,kind="ink",frames=frames,frameMs=if doc.animation then doc.animation.frameMs else 250}
 end
 return media

@@ -8,7 +8,6 @@ local makeSharing = require("sharing")
 local wallArt = require("wall_art")
 local instances = require("placements")
 local playback=require("playback")
-local interactSound=false
 local organisation = require("library")
 local openPublic, syncInstance, attachMedia
 local previewScale,previewAngle,editingInstance=1,0,nil
@@ -202,7 +201,7 @@ local function updatePreview()
     end
     local transform = surface(reskate.world, view, reskate.level.current, (design.width or .65)*previewScale, (design.height or .65)*previewScale, previewAngle)
     if not transform then discardPreview() return false end
-    local parts = design.parts
+    local parts = design.textureParts or design.parts
     if preview then
         local changed = false
         for i = 1,16 do
@@ -269,7 +268,7 @@ studio = makeStudio(function(file,doc)
 
     studio.close()
     local piece={id=file,name=doc.name,parts=parts,resolution=resolution,width=wallArt.width,height=wallArt.height}
-    if doc.animation or doc.sound then
+    if doc.animation then
         local asset,msg=require("media_format").fromDrawing(doc,wallArt)
         if not asset then studio.resumeGallery() return false,msg end
         piece.media=asset piece.frames=require("media_format").validate(asset,require("imports").decode)
@@ -343,11 +342,11 @@ local function place()
         local ok,msg=instances.change(if editing then "placement move" else "placement",editing,row)
         if not ok then warnMap("Placement unsaved: "..tostring(msg)) return end
         if editing then syncInstance(nil,editing.id) end
-        preview.instance=row preview.parts=design.parts
+        preview.instance=row preview.parts=design.textureParts or design.parts
     end
     for _,handle in preview.handles do fx.opacity(handle,1) end
-    attachMedia(preview,design.media,design.instanceSound)
-    if not design.parts and not design.media and not design.instanceSound then
+    attachMedia(preview,design.media)
+    if not design.parts and not design.media then
         preview.world,preview.map=scope()
     end
     if not design.parts or design.file then arm.place(preview.transform) end
@@ -453,12 +452,7 @@ end
 local stock={}
 for _,p in pieces do stock[p.id]=p end
 
-attachMedia=function(mark,asset,override)
-    if override~=nil then
-        asset=if asset then table.clone(asset) else {frames={}}
-        asset.sound=if override==false then nil else override
-        if #asset.frames==0 then playback.attach(mark,{{}},asset) return end
-    end
+attachMedia=function(mark,asset)
     if asset then
         local frames=require("media_format").validate(asset,require("imports").decode)
         if frames then playback.attach(mark,frames,asset) end
@@ -476,7 +470,7 @@ syncInstance=function(row,id)
             if row then
                 mark.instance=row mark.transform=instances.matrix(row.base,row.scale,row.angle,row.stretch)
                 moveHandles(mark,mark.transform)
-                attachMedia(mark,row.media,row.sound)
+                attachMedia(mark,row.media)
             else removeMark(i) end
             return
         end
@@ -484,18 +478,19 @@ syncInstance=function(row,id)
     if not row or sessionActive then return end
     local piece=instances.design(row)
     if not piece.parts and not stock[piece.id] then warnMap("Missing artwork: "..piece.name) return end
-    if artHandles+(if piece.parts then #piece.parts else 1)>handleBudget or artworkCount()>=capacity then retryInstances[id]=row return end
+    local parts=piece.textureParts or piece.parts
+    local count=if parts then #parts else 1
+    if artHandles+count>handleBudget or artworkCount()>=capacity then retryInstances[id]=row return end
     local m=instances.matrix(row.base,row.scale,row.angle,row.stretch)
-    local mark={id=piece.id,name=piece.name,handles={},transform=m,parts=piece.parts,instance=row,expires=elapsed+lifetime}
-    local count=if piece.parts then #piece.parts else 1
+    local mark={id=piece.id,name=piece.name,handles={},transform=m,parts=parts,instance=row,expires=elapsed+lifetime}
     ink.reserve(artHandles+count)
     for i=1,count do
-        local part=piece.parts and piece.parts[i]
+        local part=parts and parts[i]
         local h=fx.decal(assetRoot..(if part then part.asset else piece.id).."_dv",if part then wallArt.transform(m,part) else m)
         if not h then release(mark) retryInstances[id]=row return end
         table.insert(mark.handles,h) fx.opacity(h,1)
     end
-    attachMedia(mark,row.media,row.sound)
+    attachMedia(mark,row.media)
     table.insert(placed,mark) artHandles+=count nextMarkExpiry=math.min(nextMarkExpiry,mark.expires)
 end
 local function mapPreview(row,scale,angle,stretch)
@@ -540,30 +535,22 @@ local function buildPanels()
         publicGallery.close() aim(p,function() openPublic("library") end)
     end
     local screens={}
-    screens.library=require("library_screen")(pieces,libraryAim,function() publicGallery.close() backToHome() end,function() openPublic("map") end,function()
-        local ok,why=require("photo").start(function(message)
-            openPublic("library")
-            reskate.ui.toast(message)
-        end)
-        if ok then publicGallery.close() else reskate.ui.toast(tostring(why)) end
-    end)
+    screens.library=require("library_screen")(pieces,libraryAim,function() publicGallery.close() backToHome() end,function() openPublic("map") end)
     screens.map=require("map_screen")({
         preview=mapPreview,library=function() openPublic("library") end,
-        change=function(label,row,scale,angle,stretch,sound)
+        change=function(label,row,scale,angle,stretch)
             local after
             if scale then
                 after=table.clone(row) after.scale,after.angle=scale,angle after.stretch=stretch or row.stretch
-                if sound~=nil then after.sound=sound end
                 if not footprint(instances.matrix(row.base,scale,angle,after.stretch)) then return nil,"The new size does not fit this wall." end
             end
             local ok,msg=instances.change(label,row,after)
             if ok then mapPreview(nil) syncInstance(after,row.id) end
             return ok,msg
         end,
-        aim=function(row,scale,angle,copy,stretch,sound)
+        aim=function(row,scale,angle,copy,stretch)
             publicGallery.close()
             local moved=instances.design(row)
-            moved.instanceSound=sound
             moved.width*=stretch or row.stretch or 1
             aim(moved,function() openPublic("map") end,scale,angle,if copy then nil else row,true)
         end,
@@ -622,7 +609,6 @@ local actions = {
     ["Remove Switchback"] = remove,
 }
 local function action(name)
-    if name=="Interact with artwork" then interactSound=not (publicGallery and publicGallery.active() or menu.active() or paint.active() or studio.active() or selector.active() or aiming) return end
     if publicGallery and publicGallery.active() then
         if name=="Aim Switchback" or name=="Place Switchback" or name=="Remove Switchback" then return end
         publicGallery.close()
@@ -636,7 +622,6 @@ local function action(name)
         actions[name]()
     end
 end
-reskate.input.bind("Interact with artwork","Ctrl+J")
 reskate.input.bind("Open Wall Paint", "Ctrl+I")
 reskate.input.bind("Open Custom Editor", "Ctrl+E")
 reskate.input.bind("Open Blackbook", "Ctrl+B")
@@ -717,7 +702,7 @@ reskate.on("tick", function(dt)
                 local d=distance(row.base,view.position)
                 if d<dist then nearest,dist=row,d end
             end
-            local needed=if nearest.parts then #nearest.parts else 1
+            local needed=instances.handleCount(nearest)
             if makeRoom(needed,view.position,dist+1) then syncInstance(nearest,nearest.id) end
             nextInstanceRetry=elapsed+(if retryInstances[nearest.id] then 500 else 32)
         end
@@ -726,9 +711,9 @@ reskate.on("tick", function(dt)
     if sessionActive then
         sharing.tick(placed,worldId,mapName)
     else
-        local previewSlots=if aiming then (if design.parts then #design.parts else 1) else 0
-        playback.tick(dt,wallArt,handleBudget-artHandles-previewSlots,interactSound)
-        interactSound=false
+        local parts=design.textureParts or design.parts
+        local previewSlots=if aiming then (if parts then #parts else 1) else 0
+        playback.tick(dt,wallArt,handleBudget-artHandles-previewSlots)
         ink.reserve(artHandles+previewSlots+playback.handles())
         brushHit,brushColour=paint.tick()
         ink.tick(reskate.time.now())

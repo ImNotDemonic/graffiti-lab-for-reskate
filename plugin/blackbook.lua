@@ -1,6 +1,5 @@
 -- One file is one editable drawing. The file name is its stable ID across renames.
 local pattern=require("pattern")
-local media=require("media_format")
 local book = {
     width = 2048, height = 1024, maxPoints = 448, maxStrokes = 96,
     palette = assert(reskate.package.read_json("art/palette.json")),
@@ -42,7 +41,6 @@ local function valid(doc,frameOnly)
             if not integer(stroke.xy[i], 0, book.width) or not integer(stroke.xy[i+1], 0, book.height) then return false end
         end
     end
-    if not media.sound(doc.sound) then return false end
     if doc.animation then
         local a=doc.animation
         if frameOnly or type(a)~="table" or not integer(a.frameMs,100,5000) or not array(a.frames,8) or #a.frames<1 then return false end
@@ -75,6 +73,7 @@ function book.read(file)
     end
     -- Reading a legacy drawing never modifies its file.
     doc.kind, doc.artworkId = "drawing", file
+    doc.sound=nil
     return doc, raw
 end
 
@@ -97,8 +96,9 @@ function book.save(doc, file, original)
         file = string.format("blackbook-%04d.json", number)
     end
     local saved = table.clone(doc)
+    saved.sound=nil
     saved.version, saved.kind, saved.artworkId = 2, "drawing", file
-    if doc.tile or doc.animation or doc.sound or doc.version==3 then saved.version=3 end
+    if doc.tile or doc.animation or doc.version==3 then saved.version=3 end
     for _,s in doc.strokes do if s.symmetry then saved.version=3 break end end
     local encoded, raw = pcall(reskate.json.encode, saved)
     if not encoded then return nil, "Cannot encode drawing" end

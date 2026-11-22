@@ -4,7 +4,7 @@ import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import { createServer } from "node:http";
 import { once } from "node:events";
-import worker from "./worker.mjs";
+import worker, {artwork} from "./worker.mjs";
 
 const db = new DatabaseSync(":memory:");
 db.exec(readFileSync(new URL("./migrations/0001_gallery.sql",import.meta.url),"utf8"));
@@ -31,6 +31,7 @@ const root="http://127.0.0.1:"+server.address().port;
 const post=(path,data)=>fetch(root+path,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(data)});
 try {
   const raw="GLART1 16 16 16 16\n0 0 2 1 3", asset={version:1,kind:"ink",frameMs:200,frames:[raw]};
+  assert.deepEqual(artwork({...asset, sound:{id:"spray-loop",trigger:"approach"}}), asset);
   const submission={title:"Orange line",description:"A gallery test",tags:["test"],token,operation:"1",asset};
   const created=await post("/v1/publish",submission); assert.equal(created.status,201);
   const {id}=await created.json();

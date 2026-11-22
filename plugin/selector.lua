@@ -79,7 +79,9 @@ return function(pieces,onChoose,onBack,organise)
             local h=w/piece.aspect
             local left,top=x+(width-w)/2,y+(height-h)/2
             if piece.file then
-                if piece.parts then
+                if piece.textureParts then
+                    require("native_arch").draw(d,u,piece.textureParts,piece.textureSheet,left,top,w,h)
+                elseif piece.parts then
                     for _,part in piece.parts do
                         u.rect(left+(part.x+0.5-part.w/2)*w,top+(part.y+0.5-part.h/2)*h,
                             part.w*w,part.h*h,palette[part.colour])

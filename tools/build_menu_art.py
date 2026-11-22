@@ -20,8 +20,10 @@ for y in range(3, 200, 7):
         draw.ellipse((310+x-1, y-1, 310+x+2, y+2), fill=(255, 90, 31, alpha))
 draw.polygon([(311,216), (323,213), (423,215), (509,213),
               (505,222), (389,220), (316,222)], fill=(255,90,31,255))
-left, top, right, bottom = font.getbbox("PUBLIC ARTWORKS")
-mask = Image.new("L", (right-left, bottom-top))
-ImageDraw.Draw(mask).text((-left,-top), "PUBLIC ARTWORKS", font=font, fill=255)
-atlas.paste((255,255,255,255), (310,244,510,294), mask.resize((200,50), Image.Resampling.LANCZOS))
+for row, title in enumerate(["PUBLIC ARTWORKS", "ARTWORK LIBRARY", "RESHAPE ARTWORK", "MAP PLACEMENTS"]):
+    left, top, right, bottom = font.getbbox(title)
+    mask = Image.new("L", (right-left, bottom-top))
+    ImageDraw.Draw(mask).text((-left,-top), title, font=font, fill=255)
+    y = 244 + 56 * row
+    atlas.paste((255,255,255,255), (310,y,510,y+50), mask.resize((200,50), Image.Resampling.LANCZOS))
 atlas.save(root / "art/menu-type.png", optimize=True)

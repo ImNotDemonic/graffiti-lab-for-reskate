@@ -1,6 +1,6 @@
 # Graffiti Lab gallery service
 
-The ReSkate ZIP contains the gallery client. The Worker and its D1 database run separately. Publishing is open to provisioned creators. Browsing and downloading are public. The creator name comes from the account, and each account can unpublish its own work. The first frame supplies the thumbnail. Static rectangles, up to eight animation frames and packaged sound IDs use the same versioned ink format. No uploaded executable, asset path, URL or compressed archive is accepted.
+The ReSkate ZIP contains the gallery client. The Worker and its D1 database run separately. Publishing is open to provisioned creators. Browsing and downloading are public. The creator name comes from the account, and each account can unpublish its own work. The first frame supplies the thumbnail. Static rectangles and up to eight silent animation frames use the same versioned ink format. No uploaded executable, asset path, URL or compressed archive is accepted.
 
 ## Live Graffiti Lab test
 

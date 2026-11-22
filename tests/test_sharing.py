@@ -219,7 +219,7 @@ print("PASS: aim prompt, invalid wall, held controls, menu input, mouse placemen
 
 def run(luau, directory, name, script):
     modules = []
-    for module in ("playback", "media_format", "library", "placements", "surface", "sharing", "wall_codec", "wall_store", "wall_ink", "spray_fx", "spray_arm"):
+    for module in ("playback", "media_format", "library", "native_arch", "placements", "surface", "sharing", "wall_codec", "wall_store", "wall_ink", "spray_fx", "spray_arm"):
         code = (ROOT / "plugin" / (module + ".lua")).read_text(encoding="utf-8")
         modules.append(f"modules.{module}=(function()\n{code}\nend)()")
     main = (ROOT / "plugin/main.lua").read_text(encoding="utf-8")

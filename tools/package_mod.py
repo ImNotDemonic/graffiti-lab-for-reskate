@@ -11,6 +11,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 
 from PIL import Image
 from fbmod import package
+from arch_textures import prepare as prepare_arch
 
 ROOT = Path(__file__).resolve().parents[1]
 GAME_HASH = "fbce74d5e28ef525dbba2cb4adbebc13405bdbd88f31bc940bca45e4ae88b8f9"
@@ -28,6 +29,23 @@ def mist_texture(path):
             alpha.append(round(170 * (1 - math.exp(-density))))
     image.putdata([(255, 255, 255, a) for a in alpha])
     image.save(path)
+
+
+def reshape_grid(image, palette):
+    """An editable source in the same 16 resident inks used by wall artwork."""
+    grid = image.convert("RGBA")
+    grid.thumbnail((64, 64), Image.Resampling.LANCZOS)
+    colours = [bytes.fromhex(value[1:]) for value in palette]
+    symbols = "123456789ABCDEFG"
+    pixels = []
+    for r, g, b, alpha in grid.get_flattened_data() if hasattr(grid, "get_flattened_data") else grid.getdata():
+        if alpha < 96:
+            pixels.append(".")
+        else:
+            ink = min(range(len(colours)), key=lambda i: (
+                2 * (r-colours[i][0])**2 + 4 * (g-colours[i][1])**2 + (b-colours[i][2])**2))
+            pixels.append(symbols[ink])
+    return {"w": grid.width, "h": grid.height, "pixels": "".join(pixels)}
 
 
 def prepare_art(catalogue, scratch):
@@ -94,12 +112,16 @@ def build(game, studio, author, destination, native_from=None):
     with tempfile.TemporaryDirectory(dir=build_dir) as temp:
         scratch = Path(temp)
         images = prepare_art(catalogue, scratch)
+        arches = prepare_arch(ROOT, catalogue, scratch)
         if native_from:
             patch = scratch / "verified-native"
             toc = bundle.removeprefix("win32/") + ".toc"
             # Studio gives some native resources new IDs on every compile.
             # Reuse the complete tested bundle for a script-only release.
             with ZipFile(native_from) as previous:
+                if ("art/arch/materials.sha256" not in previous.namelist() or
+                        previous.read("art/arch/materials.sha256") != (scratch / "arch/materials.sha256").read_bytes()):
+                    raise ValueError("Original-texture arch materials changed. Rebuild with Studio.")
                 old_plugin = json.loads(previous.read("reskate-plugin.json"))
                 if any(old_plugin[key] != plugin[key] for key in ("resident", "effects")):
                     raise ValueError("The native resource declarations changed. Rebuild with Studio.")
@@ -129,6 +151,7 @@ def build(game, studio, author, destination, native_from=None):
                 pixels = scratch / f"{name}.rgba"
                 pixels.write_bytes(Image.new("RGBA", (512, 512), colour).tobytes())
                 args.extend([str(15 + index), name, pixels])
+            args.extend(arches)
             subprocess.run(args, check=True)
             rows = json.loads((authored / "resources.json").read_text())["resources"]
             templates = [r["name"] for r in rows if r.get("root_type") == "EnvironmentDecalVolumeTemplateData"]
@@ -162,13 +185,16 @@ def build(game, studio, author, destination, native_from=None):
                          "plugin/dock.lua", "plugin/menu.lua", "plugin/selector.lua", "plugin/blackbook.lua", "plugin/studio.lua",
                          "plugin/wall_art.lua", "plugin/wall_codec.lua", "plugin/wall_store.lua", "plugin/wall_ink.lua", "plugin/paint.lua", "plugin/sharing.lua",
                          "plugin/spray_arm.lua", "plugin/spray_fx.lua", "art/spray-loop.wav", "art/spray-burst.wav",
-                         "plugin/media_format.lua", "plugin/playback.lua", "plugin/pattern.lua", "plugin/photo.lua", "plugin/library.lua", "plugin/library_screen.lua", "plugin/placements.lua", "plugin/map_screen.lua",
+                         "plugin/media_format.lua", "plugin/playback.lua", "plugin/pattern.lua", "plugin/reshape.lua", "plugin/reshape_screen.lua", "plugin/library_dock.lua", "plugin/library.lua", "plugin/library_screen.lua", "plugin/placements.lua", "plugin/map_screen.lua",
                          "plugin/imports.lua", "plugin/gallery.lua", "plugin/gallery_dock.lua", "plugin/gallery_screen.lua",
                          "art/palette.json", "art/checker.png", "LICENSE", "art/NOTICE.md"):
                 archive.write(ROOT / path, path)
             # ReSkate caches overlay textures by path across plugin reloads.
-            archive.write(ROOT / "art/menu-type.png", "art/menu-headings.png")
+            archive.write(ROOT / "art/menu-type.png", "art/menu-headings-081.png")
             archive.write(scratch / "catalogue.json", "art/catalogue.json")
+            archive.write(ROOT / "plugin/native_arch.lua", "plugin/native_arch.lua")
+            for file in sorted((scratch / "arch").iterdir()):
+                archive.write(file, "art/arch/" + file.name)
             for sheet in sorted(scratch.glob("premades*.png")):
                 archive.write(sheet, "art/" + sheet.name)
             importer = (ROOT / "art/Import Artwork.html").read_text(encoding="utf-8")
@@ -179,6 +205,8 @@ def build(game, studio, author, destination, native_from=None):
             archive.writestr("art/Import Artwork.html", importer)
             for piece in catalogue:
                 with Image.open(ROOT / piece.get("source", f"art/{piece['id']}.png")) as original:
+                    grid = reshape_grid(original, palette)
+                    archive.writestr(f"art/reshape/{piece['id']}.json", json.dumps(grid))
                     original.thumbnail((384, 384), Image.Resampling.LANCZOS)
                     path = scratch / "edit-source.png"
                     original.save(path)

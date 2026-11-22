@@ -45,9 +45,9 @@ local function raster(doc,w)
     return grid
 end
 
-local function rectangles(grid,w)
+function art.rectangles(grid,w,h)
     local parts,previous={},{}
-    for y=0,w/2-1 do
+    for y=0,h-1 do
         local current={}
         local x=0
         while x<w do
@@ -75,7 +75,7 @@ function art.compile(doc, maximumWidth)
     if #doc.strokes==0 then return nil,"Draw and save at least one stroke first." end
     for _,w in {128,64,32,16} do
         if maximumWidth and w>maximumWidth then continue end
-        local parts=rectangles(raster(doc,w),w)
+        local parts=art.rectangles(raster(doc,w),w,w/2)
         if parts then
             for _,p in parts do
                 p.x=(p.x+p.w/2)/w-0.5

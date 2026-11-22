@@ -3,6 +3,29 @@ local placements={}
 local folder,map,pending,offset,records={},nil,{},1,{}
 local past,future={},{}
 local serial=0
+local arch=require("native_arch")
+local legacyStyles=setmetatable({},{__mode="k"})
+
+-- Older placements contain only their portable ink. Upgrade the view only if
+-- the original local save still matches every stored rectangle and colour.
+local function originalStyle(r)
+    if arch.valid(r.arch) then return r.arch end
+    if legacyStyles[r]~=nil then return legacyStyles[r] or nil end
+    legacyStyles[r]=false
+    local file=r.art:match("^import/([%w _%-]+%.glshape)$")
+    if not file or not r.parts or r.media then return end
+    local p={file="imports/"..file}
+    if not require("imports").load(p) or not p.arch or #p.parts~=#r.parts then return end
+    for i,v in r.parts do
+        local expected=p.parts[i]
+        if v.colour~=expected.colour then return end
+        for _,k in {"x","y","w","h"} do
+            if math.abs(v[k]-expected[k])>1e-7 then return end
+        end
+    end
+    legacyStyles[r]=p.arch
+    return p.arch
+end
 local function directory(name)
     local h,k=5381,7
     for i=1,#name do local c=name:byte(i) h=(h*33+c)%4294967296 k=(k*131+c)%4294967296 end
@@ -19,7 +42,6 @@ local function valid(rec)
     end
     if type(rec.scale)~="number" or not (rec.scale>=0.1 and rec.scale<=5) or type(rec.angle)~="number" or not (math.abs(rec.angle)<=360) then return false end
     if rec.stretch~=nil and (type(rec.stretch)~="number" or not (rec.stretch>=0.1 and rec.stretch<=5)) then return false end
-    if rec.sound~=nil and rec.sound~=false and not require("media_format").sound(rec.sound) then return false end
     if rec.media then
         if not require("media_format").validate(rec.media,require("imports").decode) then return false end
     end
@@ -54,6 +76,8 @@ function placements.load(name)
     if not raw then return true end
     local ok,r=pcall(reskate.json.decode,raw)
     if not ok or not valid(r) or r.id..".json"~=f then return nil,"Skipped damaged placement "..f end
+    r.sound=nil
+    if r.media then r.media=require("media_format").visual(r.media) end
     records[r.id]=r
     return true,r
 end
@@ -71,7 +95,11 @@ function placements.new(piece,base,scale,angle)
         parts={}
         for _,p in piece.parts do table.insert(parts,{x=p.x,y=p.y,w=p.w,h=p.h,colour=p.colour}) end
     end
-    return {version=1,id=id,map=map,art=piece.id,name=piece.name,parts=parts,media=piece.media,sound=piece.instanceSound,base=table.clone(base),scale=scale,angle=angle}
+    return {version=1,id=id,map=map,art=piece.id,name=piece.name,parts=parts,arch=piece.arch,media=piece.media,base=table.clone(base),scale=scale,angle=angle}
+end
+function placements.handleCount(r)
+    local style=originalStyle(r)
+    return if style then arch.count(style) elseif r.parts then #r.parts else 1
 end
 function placements.design(r)
     local parts
@@ -80,7 +108,9 @@ function placements.design(r)
         for _,p in r.parts do local part=table.clone(p) part.asset=string.format("ink_%02d",p.colour) table.insert(parts,part) end
     end
     local m=r.base
-    return {id=r.art,name=r.name,parts=parts,media=r.media,instanceSound=r.sound,width=vector.magnitude(vector.create(m[1],m[2],m[3])),
+    local style=originalStyle(r)
+    local textureParts,sheet=arch.parts(style)
+    return {id=r.art,name=r.name,parts=parts,arch=style,textureParts=textureParts,textureSheet=sheet,media=r.media,width=vector.magnitude(vector.create(m[1],m[2],m[3])),
         height=vector.magnitude(vector.create(m[9],m[10],m[11]))}
 end
 function placements.matrix(base,scale,angle,stretch)

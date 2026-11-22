@@ -39,34 +39,31 @@ local function mark()
     local h=reskate.effects.decal("first",base)
     return {handles={h},transform=table.clone(base)}
 end
-local nextVoice,starts,stops=1,0,0
-local voices={}
-reskate.audio.play=function(path,opts) starts+=1 nextVoice+=1 voices[nextVoice]=opts return nextVoice end
-reskate.audio.stop=function(i) assert(voices[i]) voices[i]=nil stops+=1 end
-reskate.audio.set=function(i,opts) assert(voices[i]) voices[i].position=opts.position end
-reskate.audio.playing=function(i) return voices[i]~=nil end
+assert(asset.sound==nil and restored.sound==nil)
 local player=modules.playback
 local a,b=mark(),mark()
-player.attach(a,frames,asset) player.attach(b,frames,asset)
-player.tick(210,wall,768,true)
-assert(starts==1 and player.handles()>0 and live[a.handles[1]].alpha==0,"independent animation or interact failed")
-player.tick(1,wall,768,true) assert(starts==1,"overlapping sound")
-focus=v(60,1,0) player.tick(10,wall,768,false)
-assert(stops==1 and player.handles()==0 and live[a.handles[1]].alpha==1)
-player.clear()
-focus=v(2,1,0)
-for _,trigger in {"approach","nearby-loop"} do
-    asset.sound.trigger=trigger
-    player.attach(a,frames,asset)
-    local initial=starts
-    player.tick(0,wall,768,false) player.tick(10,wall,768,false)
-    assert(starts==initial+1 and voices[nextVoice].loop==(trigger=="nearby-loop"))
-    a.transform[13]=3 player.tick(10,wall,768,false) assert(voices[nextVoice].position.x==3)
-    assert(player.setVolume(0)) player.tick(10,wall,768,false)
-    assert(next(voices)==nil)
-    assert(player.setVolume(100)) player.remove(a) assert(player.handles()==0)
+reskate.audio.play=function() error("artwork started a sound") end
+for _,trigger in {"interact","approach","nearby-loop"} do
+    asset.sound={id="spray-loop",trigger=trigger,radius=10,volume=60,cooldown=2}
+    assert(media.validate(asset,modules.imports.decode))
+    assert(media.visual(asset).sound==nil)
+    focus=v(2,1,0)
+    player.attach(a,frames,asset) player.attach(b,frames,asset)
+    player.tick(210,wall,768)
+    assert(player.handles()>0 and live[a.handles[1]].alpha==0)
+    focus=v(60,1,0) player.tick(10,wall,768)
+    assert(player.handles()==0 and live[a.handles[1]].alpha==1)
+    player.clear()
 end
-print("PASS: mirrors and rotation, shifted origins, all eight tile boundaries, version 3 round trip, two animated instances, interaction/approach/loop, movement, mute, clean removal")
+player.attach(a,frames,asset)
+focus=v(2,1,0) player.tick(210,wall,768)
+assert(player.handles()>0)
+reskate.effects.clear() -- The host retires the previous map's handles before the unload callback.
+emit("level_unloading")
+assert(player.handles()==0)
+emit("level_loaded",map)
+assert(modules.playback.handles()==0)
+print("PASS: symmetry, tile boundaries, frame persistence and silent playback of legacy artwork")
 '''
 
 UI = r'''
@@ -76,10 +73,8 @@ click(1610,285) click(940,450) -- draw only on frame 2
 click(420,690) click(702,790)
 local doc=assert(modules.blackbook.read("blackbook-0001.json"))
 assert(#doc.animation.frames==2 and #doc.strokes==0 and #doc.animation.frames[2].strokes==1)
-click(1510,408) click(685,786)
-doc=assert(modules.blackbook.read("blackbook-0001.json"))
-assert(doc.sound.id=="spray-burst")
-print("PASS: real frame editor callbacks duplicated a frame, edited it independently, assigned sound and saved")
+assert(doc.sound==nil)
+print("PASS: frame editor duplicated, independently edited and saved a silent loop")
 '''
 if __name__ == "__main__":
     run(sys.argv[1], CHECKS, "creative")

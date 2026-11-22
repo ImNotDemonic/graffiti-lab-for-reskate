@@ -89,6 +89,11 @@ end
 function gallery.prepare(source)
     if source.kind=="import" then
         local raw,why=reskate.files.read(source.file)
+        if raw and source.file:match("%.glshape$") then
+            local doc,msg=require("reshape").read(raw)
+            if not doc then return nil,msg end
+            return doc.asset.frames[1],source.name,doc.asset
+        end
         if raw and source.index then
             local ok,pack=pcall(reskate.json.decode,raw)
             local item=ok and type(pack)=="table" and type(pack.items)=="table" and pack.items[source.index]
@@ -115,7 +120,7 @@ function gallery.store(item,expected)
     end
     local name=item.title:gsub("[^%w _%-]",""):sub(1,48)
     if name=="" then name="Gallery artwork" end
-    local data={version=1,id=item.id,title=item.title,creator=item.creator,description=item.description,tags=item.tags,frame=a.frames[1],media=if #a.frames>1 or a.sound then a else nil}
+    local data={version=1,id=item.id,title=item.title,creator=item.creator,description=item.description,tags=item.tags,frame=a.frames[1],media=if #a.frames>1 then require("media_format").visual(a) else nil}
     local path="gallery/downloads/"..name.."~"..expected..".json"
     local ok,problem=reskate.files.write(path,reskate.json.encode(data))
     if not ok then return nil,problem end

@@ -14,6 +14,6 @@ The [specification](PROJECT_SPEC.md) defines the pass conditions. Update [API fi
 
 The [extension plan and feature status](EXTENSION.md) tracks save compatibility, library and placement editing, creative tools, paint capacity, media and the cross-session gallery.
 
-## 0.8.0 qualification
+## 0.8.1 qualification
 
-The [feature status and reproducible checks](EXTENSION.md#080-development-build) cover all roadmap features. The open game checks are two-map placement and media playback, the photo-to-wall round trip, and a clean second installation downloading media and placing it offline. Public gallery cards, source compatibility and the 100,000-sample paint test have targeted regressions.
+The [feature status and reproducible checks](EXTENSION.md#081-development-build) cover all roadmap features. The open game checks are two-map placement of reshaped copies, silent animation playback, and a clean second installation downloading media and placing it offline. Public gallery cards, source compatibility and the 100,000-sample paint test have targeted regressions.

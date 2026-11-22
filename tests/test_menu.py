@@ -159,7 +159,7 @@ def run(luau, checks, name="menu", capture=False, catalogue=None):
         rows.append("{" + ",".join(fields) + "}")
     with TemporaryDirectory() as directory:
         code = [ADAPTER, "local testCatalogue={" + ",\n".join(rows) + "}", HOST]
-        for module in ("dock", "surface", "sharing", "wall_codec", "wall_store", "wall_ink", "media_format", "playback", "pattern", "blackbook", "wall_art", "paint", "studio", "imports", "library", "placements", "map_screen", "photo", "library_screen", "gallery", "gallery_dock", "gallery_screen", "selector", "menu", "spray_fx", "spray_arm"):
+        for module in ("dock", "surface", "sharing", "wall_codec", "wall_store", "wall_ink", "media_format", "playback", "pattern", "blackbook", "wall_art", "paint", "studio", "imports", "library", "native_arch", "placements", "map_screen", "reshape", "reshape_screen", "library_dock", "library_screen", "gallery", "gallery_dock", "gallery_screen", "selector", "menu", "spray_fx", "spray_arm"):
             source = (ROOT / "plugin" / (module + ".lua")).read_text(encoding="utf-8")
             code.append(f"modules.{module}=(function()\n{source}\nend)()")
         code.extend([(ROOT / "plugin/main.lua").read_text(encoding="utf-8"), checks])

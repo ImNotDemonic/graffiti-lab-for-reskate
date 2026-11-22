@@ -4,7 +4,6 @@
   "entry": "plugin/main.lua",
   "permissions": [
     "camera",
-    "capture",
     "skater.read",
     "skater.animation",
     "world.raycast",
@@ -84,9 +83,305 @@
     "world/materials/decal/reskate_graffitilab/ink_13_dv",
     "world/materials/decal/reskate_graffitilab/ink_14_dv",
     "world/materials/decal/reskate_graffitilab/ink_15_dv",
-    "world/materials/decal/reskate_graffitilab/ink_16_dv"
+    "world/materials/decal/reskate_graffitilab/ink_16_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_0_0_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_0_1_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_0_2_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_0_3_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_0_4_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_0_5_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_0_6_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_0_7_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_1_0_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_1_1_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_1_2_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_1_3_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_1_4_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_1_5_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_1_6_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_1_7_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_2_0_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_2_1_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_2_2_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_2_3_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_2_4_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_2_5_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_2_6_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_2_7_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_3_0_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_3_1_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_3_2_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_3_3_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_3_4_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_3_5_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_3_6_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_3_7_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_4_0_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_4_1_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_4_2_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_4_3_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_4_4_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_4_5_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_4_6_dv",
+    "world/materials/decal/reskate_graffitilab/arch_pack_002_4_7_dv"
   ],
   "resident": [
+    {
+      "bundle": "win32/levels/game/dingolevel_root/dingolevel_root",
+      "roots": [
+        "world/materials/decal/reskate_graffitilab/"
+      ],
+      "shaders": [
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_0_0",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_0_0_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_0_1",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_0_1_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_0_2",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_0_2_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_0_3",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_0_3_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_0_4",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_0_4_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_0_5",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_0_5_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_0_6",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_0_6_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_0_7",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_0_7_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_1_0",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_1_0_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_1_1",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_1_1_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_1_2",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_1_2_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_1_3",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_1_3_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_1_4",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_1_4_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_1_5",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_1_5_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_1_6",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_1_6_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_1_7",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_1_7_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_2_0",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_2_0_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_2_1",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_2_1_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_2_2",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_2_2_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_2_3",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_2_3_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_2_4",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_2_4_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_2_5",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_2_5_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_2_6",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_2_6_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_2_7",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_2_7_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_3_0",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_3_0_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_3_1",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_3_1_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_3_2",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_3_2_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_3_3",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_3_3_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_3_4",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_3_4_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_3_5",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_3_5_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_3_6",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_3_6_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_3_7",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_3_7_dv"
+          ]
+        }
+      ]
+    },
+    {
+      "bundle": "win32/levels/game/dingolevel_root/dingolevel_root",
+      "roots": [
+        "world/materials/decal/reskate_graffitilab/"
+      ],
+      "shaders": [
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_4_0",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_4_0_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_4_1",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_4_1_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_4_2",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_4_2_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_4_3",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_4_3_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_4_4",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_4_4_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_4_5",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_4_5_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_4_6",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_4_6_dv"
+          ]
+        },
+        {
+          "name": "world/materials/decal/reskate_graffitilab/shaderblockdepot_arch_pack_002_4_7",
+          "roots": [
+            "world/materials/decal/reskate_graffitilab/arch_pack_002_4_7_dv"
+          ]
+        }
+      ]
+    },
     {
       "bundle": "win32/levels/game/dingolevel_root/dingolevel_root",
       "roots": [

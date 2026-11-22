@@ -93,10 +93,16 @@ def check_package(package):
     source = json.loads((ROOT / "art/catalogue.json").read_text(encoding="utf-8"))
     with ZipFile(package) as archive:
         assert archive.testzip() is None
-        with Image.open(io.BytesIO(archive.read("art/menu-headings.png"))) as headings:
-            ink = headings.getchannel("A").crop((310, 244, 510, 294))
-            assert ink.getbbox() == (0, 0, 200, 50) and ink.getextrema() == (0, 255)
+        with Image.open(io.BytesIO(archive.read("art/menu-headings-081.png"))) as headings:
+            for y in (244, 300, 356, 412):
+                ink = headings.getchannel("A").crop((310, y, 510, y + 50))
+                assert ink.getbbox() and ink.getextrema() == (0, 255)
         runtime = json.loads(archive.read("art/catalogue.json"))
+        for piece in runtime:
+            grid = json.loads(archive.read(f"art/reshape/{piece['id']}.json"))
+            assert 1 <= grid["w"] <= 64 and 1 <= grid["h"] <= 64
+            assert len(grid["pixels"]) == grid["w"] * grid["h"]
+            assert set(grid["pixels"]) <= set(".123456789ABCDEFG") and grid["pixels"].strip(".")
         manifest = json.loads(archive.read("reskate-plugin.json"))
         sheets = {p: Image.open(io.BytesIO(archive.read(p))).convert("RGBA") for p in {entry["sheet"] for entry in runtime}}
         assert all(max(sheet.size) <= 512 for sheet in sheets.values()), "ReSkate rejects oversized sheets"

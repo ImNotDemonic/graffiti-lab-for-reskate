@@ -7,7 +7,7 @@ local function searchable(piece)
     return string.lower(table.concat({piece.name,piece.category or "",piece.lettering or "",piece.number or "",
         piece.creator or "",table.concat(piece.tags or {}," ")}," "))
 end
-return function(stock,onAim,exit,onMap,onPhoto)
+return function(stock,onAim,exit,onMap)
     local rows,queue,filtered,selected={}, {}, {},nil
     local query,folderName,folder,favourites,recent,page,note="", "", nil,false,false,1,""
     local taskIndex,open=1,false
@@ -21,7 +21,9 @@ return function(stock,onAim,exit,onMap,onPhoto)
         note=if ok then "Library saved." else tostring(why or "Could not save changes.")
         filter()
     end
+    local reshape
     local function begin()
+        if reshape then reshape.close() end
         rows,queue,selected,taskIndex,open={},{},nil,1,true
         inbox={} inboxPage=1
         for _,file in reskate.files.list("imports") or {} do
@@ -40,14 +42,28 @@ return function(stock,onAim,exit,onMap,onPhoto)
         note=why or ""
         filter()
     end
+    reshape=require("reshape_screen")(function(file)
+        begin()
+        for _,row in rows do
+            if row.file=="imports/"..file then
+                selected=row
+                query,folder,favourites,recent="",nil,false,false
+                filter()
+                page=math.ceil((table.find(filtered,row) or 1)/6)
+                imports.load(row)
+                break
+            end
+        end
+        note="Copy saved to My imports."
+    end)
     local function prepare(p)
         if p.drawing and not p.parts then
             local doc,why=book.read(p.drawing)
             if not doc then return nil,why end
             local parts,res=wall.compile(doc)
             if not parts then return nil,res end
-            p.parts,p.width,p.height=parts,wall.width,wall.height
-            if doc.animation or doc.sound then
+            p.parts,p.gridWidth,p.width,p.height=parts,res,wall.width,wall.height
+            if doc.animation then
                 local asset,msg=require("media_format").fromDrawing(doc,wall)
                 if not asset then p.parts=nil return nil,msg end
                 p.media=asset p.frames=require("media_format").validate(asset,imports.decode) p.parts=p.frames[1]
@@ -56,7 +72,19 @@ return function(stock,onAim,exit,onMap,onPhoto)
         return true
     end
     local function tick()
-        if not open or not queue[taskIndex] then return end
+        if open and reshape.active() then reshape.tick() return end
+        if not open then return end
+        if not queue[taskIndex] then
+            for i=(page-1)*6+1,math.min(page*6,#filtered) do
+                local row=filtered[i]
+                if not row.sheet and not row.parts and not row.problem then
+                    local ok,why=prepare(row)
+                    if not ok then row.problem=tostring(why) end
+                    break
+                end
+            end
+            return
+        end
         local p=queue[taskIndex]
         taskIndex+=1
         if p.drawing then
@@ -67,6 +95,7 @@ return function(stock,onAim,exit,onMap,onPhoto)
     end
     reskate.on("tick",tick)
     local function draw(d)
+        if open and reshape.active() then reshape.draw(d) return end
         local p=selected
         if not open or not p then return end
         local u=dock.draw(d)
@@ -82,7 +111,7 @@ return function(stock,onAim,exit,onMap,onPhoto)
     end
     reskate.on("draw",draw)
     local function panel(ui)
-        ui:note("Personal artwork library")
+        if reshape.active() then reshape.panel(ui) return end
         local state,why=library.get()
         local nextQuery=ui:text("lib-query","Search",query,"Name, creator or tag")
         if nextQuery~=query then query=nextQuery:sub(1,80) page=1 filter() end
@@ -99,7 +128,7 @@ return function(stock,onAim,exit,onMap,onPhoto)
         if #filtered==0 then ui:note(if taskIndex<=#queue then "Reading artwork..." else "No artwork matches these filters.") end
         for i=(page-1)*6+1,math.min(page*6,#filtered) do
             local p=filtered[i]
-            if ui:button("lib-item-"..i,(if p==selected then "> " else "")..p.name:sub(1,48)) then
+            if ui:piece("lib-item-"..i,p,p==selected) then
                 selected=p local ok,msg=prepare(p) note=if ok then p.creator or p.category or "" else tostring(msg)
             end
         end
@@ -111,6 +140,12 @@ return function(stock,onAim,exit,onMap,onPhoto)
             if ui:button("lib-place","Place on wall",true) then
                 local ok,msg=prepare(p)
                 if ok then open=false onAim(p) return else note=tostring(msg) end
+            end
+            if ui:button("lib-reshape","Reshape artwork",true) then
+                local ok,msg=prepare(p)
+                if ok then ok,msg=reshape.open(p) end
+                if ok then return end
+                note=tostring(msg)
             end
             if state and ui:button("lib-star",if (state.items[p.id] or {}).favourite then "Remove favourite" else "Favourite artwork") then
                 result(library.change("favourite",p.id))
@@ -149,17 +184,19 @@ return function(stock,onAim,exit,onMap,onPhoto)
                 if ok then begin() end result(ok,msg)
             end
         end
-        if ui:button("prepare","Open image preparer and photo folder") then
+        if ui:button("prepare","Open image preparer") then
             local ok,msg=imports.reveal()
             note=if ok then "Open Import Artwork.html and choose your source." else tostring(msg)
         end
-        if ui:button("photo","Take an in-game photo (4 second timer)") then onPhoto() return end
         local player=require("playback")
         local volume=player.volume()
-        local newGain=math.round(ui:slider("lab-volume","Graffiti Lab volume (0 mutes)",volume,0,100))
+        local newGain=math.round(ui:slider("lab-volume","Spray volume (0 mutes)",volume,0,100))
         if newGain~=volume then local ok,msg=player.setVolume(newGain) if not ok then note=tostring(msg) end end
         if ui:button("map-tools","Edit placements on this map") then onMap() end
         if ui:button("lib-back","Back to Graffiti Lab") then open=false exit() end
     end
-    return {open=begin,close=function() open=false end,panel=panel}
+    return {open=begin,close=function() open=false reshape.close() end,panel=panel,
+        title=function() return if reshape.active() then "Reshape Artwork" else "Artwork Library" end,
+        back=function() if reshape.active() then reshape.close() return true end return false end}
+
 end

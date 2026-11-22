@@ -2,13 +2,15 @@
 
 Put one of 46 premade pieces on a wall, draw a design in your Blackbook, or paint directly on the map. Open Graffiti Lab with **Ctrl+L** or **Back + Y**.
 
-## 0.8.0 development build
+## 0.8.1 development build
 
 **Public Artworks** uses the Graffiti Lab sidebar. Browse real thumbnails, select a piece for a larger preview, and download it to **Premade Art → My imports**. Animated pieces use their first frame on browse cards.
 
 - **Premade Art → Artwork Library** brings together favourites, folders, search, recents, imports and saved drawings. Use **Edit placements on this map** to move, duplicate, resize or remove a saved offline placement.
-- **Custom Editor → Tiles and symmetry** adds repeating tiles and mirrored or rotational strokes. **Frames and sound** edits short loops and sets a positional sound. Use **Ctrl+J** near interactive artwork.
-- **Artwork Library → Take an in-game photo** captures the current view after four seconds. Open the local image preparer to crop, rotate, remove a border, reshape a piece or turn a photo into poster, stencil, comic or halftone art. Save the new file in imports and refresh My imports.
+- **Premade Art → Artwork Library → Reshape artwork** edits a copy of a premade, an import or a saved Blackbook drawing. Choose Arch, Bulge, Corners, Baseline or Perspective. Drag a handle on the checkerboard or use the sidebar sliders. Undo, Redo and Reset apply to this edit.
+- **Apply and save copy** adds the result to **My imports**. Reopen it to adjust the saved shape or recover its original outline. The Bubble Throw arch keeps its original textured lettering in the menu and on the wall. Other reshapes and gallery downloads use 16 inks, so fine details can simplify.
+- **Custom Editor → Animation frames** makes silent loops. **Tiles and symmetry** adds repeating tiles and mirrored or rotational strokes. Freehand and placement spray sounds follow the spray volume control.
+- **Import Art** accepts images from disk. The in-game photo capture has been retired.
 - Wall paint uses less memory for the same saved strokes. Older drawings and wall-paint pages still load. Advanced drawing edits preserve a recovery copy when upgrading the save format.
 
 ## Public Artworks in 0.7.0

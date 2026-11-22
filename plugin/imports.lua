@@ -32,7 +32,7 @@ function imports.list()
     entries=entries or {}
     local designs={}
     for _,file in entries do
-        local name=file:match("^([%w _%-]+)%.graffiti$")
+        local name=file:match("^([%w _%-]+)%.graffiti$") or file:match("^([%w _%-]+)%.glshape$")
         if name and #name<=64 then
             table.insert(designs,{id="import/"..file,name=name,category="My imports",
                 file=folder.."/"..file,aspect=1,colourway="Local artwork"})
@@ -115,7 +115,17 @@ function imports.load(piece)
     if piece.problem then return false end
     local raw,why=reskate.files.read(piece.file)
     local parts,aspect
-    if raw and piece.index then
+    if raw and piece.file:match("%.glshape$") then
+        local doc,msg=require("reshape").read(raw)
+        if doc then
+            piece.reshape=doc
+            local arch=require("native_arch")
+            piece.arch=arch.identify(doc.source,doc.settings)
+            piece.textureParts,piece.textureSheet=arch.parts(piece.arch)
+            if #doc.asset.frames>1 then piece.media=doc.asset piece.frames=media.validate(doc.asset,decode) end
+            raw=doc.asset.frames[1]
+        else raw=nil why=msg end
+    elseif raw and piece.index then
         local ok,pack=pcall(reskate.json.decode,raw)
         local item=ok and type(pack)=="table" and type(pack.items)=="table" and pack.items[piece.index]
         raw=if type(item)=="table" and type(item.frame)=="string" then item.frame else nil
@@ -127,7 +137,7 @@ function imports.load(piece)
             raw=copy.frame
             if copy.media then
                 local frames,msg=media.validate(copy.media,decode)
-                if frames then piece.media,piece.frames=copy.media,frames
+                if frames then piece.media,piece.frames=media.visual(copy.media),frames
                 else piece.mediaWarning=msg end
             end
             if type(copy.title)=="string" then piece.name=copy.title end
@@ -143,7 +153,7 @@ function imports.load(piece)
         piece.problem=why or "Invalid artwork. Export the image again, then refresh."
         return false
     end
-    piece.parts,piece.aspect=parts,aspect
+    piece.parts,piece.aspect,piece.rawFrame=parts,aspect,raw
     piece.width=0.65*math.min(1,aspect)
     piece.height=0.65*math.min(1,1/aspect)
     return true

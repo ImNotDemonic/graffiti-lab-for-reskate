@@ -10,6 +10,7 @@ function dock.editingScreen()
     end
     return editingScreen
 end
+local extraTitles={["Public Artworks"]=244,["Artwork Library"]=300,["Reshape Artwork"]=356,["Map Placements"]=412}
 local titles = {
     ["Graffiti"]={0,3.48}, ["Lab"]={1,1.50}, ["Premade Art"]={2,4.75},
     ["Custom Editor"]={3,5.65}, ["Wall Painting"]={4,5.15}, ["Saved Gallery"]={5,5.6},
@@ -27,10 +28,11 @@ function dock.draw(d)
         d:text(u.p(x,y),value,{font=font or "body",size=size,colour=colour or dock.ink,align=align or "left",shadow=false})
     end
     function u.art(x,y,w,h,l,t,r,b,c)
-        d:image("art/menu-headings.png",u.p(x,y),u.p(x+w,y+h),{uv={l/512,t/512,r/512,b/512},colour=c or "#FFFFFF"})
+        d:image("art/menu-headings-081.png",u.p(x,y),u.p(x+w,y+h),{uv={l/512,t/512,r/512,b/512},colour=c or "#FFFFFF"})
     end
     function u.heading(x,y,label,height,c)
-        if label=="Public Artworks" then u.art(x,y,height*6.0,height,310,244,510,294,c or dock.ink) return end
+        local top=extraTitles[label]
+        if top then u.art(x,y,height*6.0,height,310,top,510,top+50,c or dock.ink) return end
         local item=titles[label]
         local t=2+item[1]*56
         u.art(x,y,height*item[2],height,2,t,302,t+50,c or dock.ink)
