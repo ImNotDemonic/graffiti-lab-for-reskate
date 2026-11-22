@@ -130,10 +130,10 @@ local function testWall(level,blueprint)
     assert(not pose and not entity[1] and quads==0 and #clouds==0,"map unload left spray effects")
 end
 nativeAvailable=true
-testWall("levels/game/bam_levelroot/bam_levelroot","Levels/Game/BAM_LevelRoot/generated/StairsLitePG_AGAsset_B8E7EE88")
+testWall("levels/game/bam_levelroot/bam_levelroot","city/buildings/painted-brick")
 nativeAvailable=false
 testWall("levels/game/dingolevel_reskate_turbo_token_arcade/dingolevel_reskate_turbo_token_arcade",
-    "world/custom/dingolevel_reskate_turbo_token_arcade/collision/0562_str_roof_281_0.physics_bp")
+    "Custom Gallery/Back Wall")
 print("PASS: arm, attached can, native mesh, bounded nozzle and wall mist, premade selector, release and unload on both receiver fixtures")
 """
 

@@ -2,6 +2,13 @@
 
 Paint walls in ReSkate with 46 premades, your own Blackbook drawings or a freehand spray can. Press **Ctrl+L** or **Back + Y** to open Graffiti Lab. Choose **Public Artworks** to share your designs and download other players’ pieces.
 
+## What's new in 0.8.2
+
+- **Wall Paint and Premade Art recognise flat walls by shape.** Both tools use the map’s collision geometry, so map authors can give a wall any name. Aim at a continuous, near-vertical face within 8 m of the camera. The whole brush or piece needs to fit. If a premade preview disappears near a corner, move it inward or reduce its size.
+- **The brush cursor stays visible while you aim.** A hollow white ring follows your pointer while you look for a surface. When you can spray, the ring takes on your selected paint colour and a dot appears in its centre.
+
+Tested in-game at **Blue Light Beach in San Vansterdam** and on the **Schoolyard** custom map. Both walls accepted freehand paint and the full-size **Switchback** premade. The selector reopened with Switchback still selected after each placement.
+
 ## What's included since 0.6.12
 
 ### 0.7.0 introduced Public Artworks

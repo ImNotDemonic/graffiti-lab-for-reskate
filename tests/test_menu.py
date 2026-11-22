@@ -76,6 +76,37 @@ click(221,947) click(370,947) assert(#saved==0,"redo erase failed")
 escape() assert(active=="Graffiti Lab")
 click(180,650) assert(active=="Graffiti Lab Studio")
 assert(has("40 mm") and has("PAINT SIZE"))
+do
+    local originalPick,originalProbe,originalCircle=reskate.world.pick,reskate.world.probe,d.circle
+    local ring,centre
+    cursor.position=v(840,520,0)
+    local function observe()
+        ring,centre=nil,false
+        step()
+    end
+    d.circle=function(_,at,r,style)
+        if at==cursor.position then
+            if style.fill then centre=true elseif style.thickness==2 then ring=r end
+        end
+    end
+    reskate.world.probe=function() return {status="clear"} end
+    observe()
+    assert(ring and not centre and has("Aim at a flat wall within 8 m"),"no aiming ring over empty space")
+    cursor.left=true observe()
+    assert(count()==0,"painted without supporting geometry")
+    cursor.left=false observe()
+    reskate.world.probe=originalProbe
+    reskate.world.pick=function(a,b)
+        local hit=originalPick(a,b)
+        if hit then hit.object={blueprint="community/art/south-facing brick"} end
+        return hit
+    end
+    observe()
+    assert(ring and centre,"arbitrarily named wall failed to show a ready brush")
+    cursor.position=v(60,480,0) observe()
+    assert(not ring and not centre,"world brush covered its toolbar")
+    reskate.world.pick,d.circle=originalPick,originalCircle
+end
 click(104,488) assert(has("65 mm"))
 key("E") assert(has("ERASE SIZE") and has("160 mm"))
 click(45,488) assert(has("100 mm"))

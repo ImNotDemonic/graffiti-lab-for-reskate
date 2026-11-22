@@ -19,7 +19,13 @@ local function brushHit(view, screen, pixel, focal, width)
         - view.up * ((pixel.y - screen.y/2) / focal)
     return surface(reskate.world, {
         position = view.position, forward = vector.normalize(direction), right = view.right, up = view.up,
-    }, reskate.level.current, width, width)
+    }, width, width)
+end
+
+local function inPaintArea(x,y,width,height)
+    return x>=0 and y>=0 and x<width and y<height
+        and not dock.inside(x,y,28,158,99,660)
+        and not dock.inside(x,y,width/2-424,999,848,51)
 end
 
 local function segment(first, last, width)
@@ -106,7 +112,7 @@ return function(recordSample, undoMark, onBack, usage, eraseAt, saveState, check
     reskate.on("draw", function(d)
         if not open then return end
         screen = d:size()
-        local scale = screen.y/1080
+        local scale = math.min(screen.y/1080,screen.x/576)
         if scale <= 0 then return end
         local u=dock.draw(d)
         local mid=screen.x/scale/2
@@ -147,14 +153,22 @@ return function(recordSample, undoMark, onBack, usage, eraseAt, saveState, check
         u.text(mid,1013,if status~="" then status elseif erasing then "Drag to erase wall paint      [ / ]   Size      E   Paint      Esc   Back"
             else "LMB   Spray     E   Eraser     [ / ]   Size     1–8   Colour     Space   Flow     Ctrl+Z   Undo",
             17,dock.ink,"bold","centre")
-        if not hover then u.text(mid,61,"Aim at a nearby wall",17,dock.blaze,"bold","centre") end
-        if hover then
-            local centre = d:world_to_screen(position(hover))
-            if centre then
-                local edge = d:world_to_screen(position(hover)+vector.create(hover[1],hover[2],hover[3])*(if erasing then 2 else 0.5))
-                if edge then d:circle(centre,math.max(vector.magnitude(edge-centre),3),{colour=if erasing then dock.ink else palette[colour],thickness=2}) end
-            end
+        local cursor=reskate.input.cursor()
+        local pointer=if cursor then cursor.position else screen*0.5
+        if not inPaintArea(pointer.x/scale,pointer.y/scale,u.width,u.height) then return end
+        local radius=math.max(5,7*scale)
+        local colourAtAim=dock.ink
+        if hover and cursor then
+            local centre=d:world_to_screen(position(hover))
+            local edge=d:world_to_screen(position(hover)+vector.create(hover[1],hover[2],hover[3])*(if erasing then 2 else 0.5))
+            if centre and edge then radius=math.max(radius,vector.magnitude(edge-centre)) end
+            colourAtAim=if erasing then dock.ink else palette[colour]
+            d:circle(pointer,2,{colour=colourAtAim,fill=true})
+        else
+            u.text(mid,61,if cursor then "Aim at a flat wall within 8 m" else "Move the mouse into the game to aim",17,dock.blaze,"bold","centre")
         end
+        d:circle(pointer,radius,{colour="#171819",thickness=4})
+        d:circle(pointer,radius,{colour=colourAtAim,thickness=2})
     end)
 
     local function tick()
@@ -193,7 +207,7 @@ return function(recordSample, undoMark, onBack, usage, eraseAt, saveState, check
             for i=1,8 do if pressed(48+i) then colour=i end end
         end
         local pixel = cursor.position
-        local scale = screen.y/1080
+        local scale = math.min(screen.y/1080,screen.x/576)
         local px,py=pixel.x/scale,pixel.y/scale
         local overTools=dock.inside(px,py,28,158,99,660)
         local click=cursor.left and not toolDown
@@ -210,8 +224,7 @@ return function(recordSample, undoMark, onBack, usage, eraseAt, saveState, check
             end
             waitUp=true
         end
-        overTools=overTools or dock.inside(px,py,screen.x/scale/2-424,999,848,51)
-        if overTools or pixel.x<0 or pixel.y<0 or pixel.x>=screen.x or pixel.y>=screen.y then
+        if not inPaintArea(px,py,screen.x/scale,screen.y/scale) then
             hover, lastPixel, lastHit = nil, nil, nil
             return
         end

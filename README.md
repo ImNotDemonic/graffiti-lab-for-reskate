@@ -2,6 +2,13 @@
 
 Paint walls in ReSkate with 46 premades, your own Blackbook drawings or a freehand spray can. Press **Ctrl+L** or **Back + Y** to open Graffiti Lab. Choose **Public Artworks** to share your designs and download other players’ pieces.
 
+## What's new in 0.8.2
+
+- **Wall Paint and Premade Art recognise flat walls by shape.** Both tools use the map’s collision geometry, so map authors can give a wall any name. Aim at a continuous, near-vertical face within 8 m of the camera. The whole brush or piece needs to fit. If a premade preview disappears near a corner, move it inward or reduce its size.
+- **The brush cursor stays visible while you aim.** A hollow white ring follows your pointer while you look for a surface. When you can spray, the ring takes on your selected paint colour and a dot appears in its centre.
+
+Tested in-game at **Blue Light Beach in San Vansterdam** and on the **Schoolyard** custom map. Both walls accepted freehand paint and the full-size **Switchback** premade. The selector reopened with Switchback still selected after each placement.
+
 ## What's included since 0.6.12
 
 ### 0.7.0 introduced Public Artworks
@@ -87,13 +94,13 @@ On Windows x64, use Python 3.11+ with Pillow, a checkout of ReSkate at `8e4aefca
 
 ```powershell
 python tools/build_author.py --sdk "C:/dev/ReSkate" --llvm "C:/dev/llvm-mingw"
-python tools/package_mod.py --game "C:/Games/ReSkate" --studio "C:/Tools/ReSkate Studio/reskate_cli.exe" --out outputs/GraffitiLab-0.8.1-Thunderstore.zip
+python tools/package_mod.py --game "C:/Games/ReSkate" --studio "C:/Tools/ReSkate Studio/reskate_cli.exe" --out outputs/GraffitiLab-0.8.2-Thunderstore.zip
 ```
 
-For a documentation- or script-only rebuild, reuse the verified native assets from the same release. For example, run the following from the checkout. When changing native geometry, textures or shaders, run the full Studio build above.
+For the 0.8.2 script update, reuse the native assets from the published 0.8.1 package. Run the following from the checkout. When changing native geometry, textures or shaders, run the full Studio build above.
 
 ```powershell
-python tools/package_mod.py --native-from "C:/path/to/verified/GraffitiLab-0.8.1.zip" --out outputs/GraffitiLab-0.8.1-Thunderstore.zip
+python tools/package_mod.py --native-from "C:/path/to/verified/GraffitiLab-0.8.1-Thunderstore.zip" --out outputs/GraffitiLab-0.8.2-Thunderstore.zip
 ```
 
 The packager uses [the Thunderstore README](docs/THUNDERSTORE_README.md) for the ZIP's root README and includes the code licence and artwork notice.

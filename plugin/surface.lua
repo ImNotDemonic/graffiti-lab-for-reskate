@@ -3,23 +3,8 @@ local up = vector.create(0, 1, 0)
 local reach = 8
 local size = 0.65
 local tolerance = 0.035
--- These two identifiers were observed on separate visits to the Blue Light Beach kiosk.
-local kioskReceivers = {
-    ["world/plots/downtown/dtn_plt_14/dtn_plt_14_base_c_arch_foot_mid_01"] = true,
-    ["levels/game/bam_levelroot/generated/stairslitepg_agasset_b8e7ee88"] = true,
-}
 
-local function structuralReceiver(object, level)
-    if not level or not level.name then return false end
-    local name = string.lower(level.name)
-    local blueprint = string.lower(object.blueprint or "")
-    if kioskReceivers[blueprint] then return name == "levels/game/bam_levelroot/bam_levelroot" end
-    -- Studio gives the arcade's baked structural collision meshes their own blueprints.
-    local map = string.match(blueprint, "^world/custom/([%w_]+)/collision/%d+_str_[%w_]+%.physics_bp$")
-    return map ~= nil and string.match(name, "([^/]+)$") == map
-end
-
-return function(world, view, currentLevel, width, height, angle)
+return function(world, view, width, height, angle)
     if not view then return nil end
     width, height = width or size, height or size
     local origin, forward = view.position, view.forward
@@ -31,10 +16,9 @@ return function(world, view, currentLevel, width, height, angle)
     local centre = sample(origin)
     if not centre then return nil end
     local picked = world.pick(origin, origin + forward * reach)
-    if not picked or vector.magnitude(picked.position - centre) > tolerance then
+    if not picked or not picked.position or vector.magnitude(picked.position - centre) > tolerance then
         return nil
     end
-    if picked.object and not structuralReceiver(picked.object, currentLevel()) then return nil end
 
     local across = sample(origin + view.right * 0.09)
     local above = sample(origin + view.up * 0.09)

@@ -199,7 +199,7 @@ local function updatePreview()
         local rise = (1 - 2*aimScreenY) * math.tan(math.rad(view.fov)/2)
         view = {position=view.position, forward=vector.normalize(view.forward + view.up*rise), right=view.right, up=view.up}
     end
-    local transform = surface(reskate.world, view, reskate.level.current, (design.width or .65)*previewScale, (design.height or .65)*previewScale, previewAngle)
+    local transform = surface(reskate.world, view, (design.width or .65)*previewScale, (design.height or .65)*previewScale, previewAngle)
     if not transform then discardPreview() return false end
     local parts = design.textureParts or design.parts
     if preview then
