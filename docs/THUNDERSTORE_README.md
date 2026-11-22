@@ -2,18 +2,29 @@
 
 Put one of 46 premade pieces on a wall, draw a design in your Blackbook, or paint directly on the map. Open Graffiti Lab with **Ctrl+L** or **Back + Y**.
 
-## 0.8.1 development build
+## What's new in 0.8.1
 
-**Public Artworks** uses the Graffiti Lab sidebar. Browse real thumbnails, select a piece for a larger preview, and download it to **Premade Art → My imports**. Animated pieces use their first frame on browse cards.
+- **Reshape an artwork without losing the original.** Open **Premade Art → Artwork Library → Reshape artwork**. Choose **Arch** to bend a word, **Bulge** to push out its middle, **Corners** to pull individual corners, **Baseline** to curve the lettering along its base, or **Perspective** to taper it. Drag the handles or use the sliders. **Apply and save copy** puts the result in **My imports**, where you can reopen it and adjust the shape again.
+- **Bubble Throw keeps its lettering when arched.** The preview and the wall now use the original artwork texture, including the outlines, dots and drips. An **81% arch** kept its shape after restarting ReSkate on the Blue Light Beach kiosk in **San Vansterdam** and the green wall in **Turbo Token Arcade**. Other reshapes and copies downloaded from the public gallery use 16 inks, which can simplify fine detail.
+- **The editing screens now match the rest of Graffiti Lab.** The Artwork Library shows thumbnail cards. The map placement and reshape screens use the same black-and-orange sidebar, and the reshape preview shows the artwork against a checkerboard.
+- **Fixed a crash during map travel.** The plugin now releases its artwork effects when leaving a level. This release also retires in-game photo capture and sounds attached to artwork. You can still import pictures from disk and adjust the volume of the spray can.
 
-- **Premade Art → Artwork Library** brings together favourites, folders, search, recents, imports and saved drawings. Use **Edit placements on this map** to move, duplicate, resize or remove a saved offline placement.
-- **Premade Art → Artwork Library → Reshape artwork** edits a copy of a premade, an import or a saved Blackbook drawing. Choose Arch, Bulge, Corners, Baseline or Perspective. Drag a handle on the checkerboard or use the sidebar sliders. Undo, Redo and Reset apply to this edit.
-- **Apply and save copy** adds the result to **My imports**. Reopen it to adjust the saved shape or recover its original outline. The Bubble Throw arch keeps its original textured lettering in the menu and on the wall. Other reshapes and gallery downloads use 16 inks, so fine details can simplify.
-- **Custom Editor → Animation frames** makes silent loops. **Tiles and symmetry** adds repeating tiles and mirrored or rotational strokes. Freehand and placement spray sounds follow the spray volume control.
-- **Import Art** accepts images from disk. The in-game photo capture has been retired.
-- Wall paint uses less memory for the same saved strokes. Older drawings and wall-paint pages still load. Advanced drawing edits preserve a recovery copy when upgrading the save format.
+**Also included from 0.8.0.** A fix for a crash when confirming a premade keeps the selector available after placement. Public Artworks gained thumbnails and a larger preview. Large freehand paintings use less memory, existing wall-paint saves still load, and saving advanced edits to an older Blackbook drawing keeps a recovery copy. The library, placement, import and pattern tools from that update are listed below.
 
-## Public Artworks in 0.7.0
+## Features
+
+- **Browse 46 premades.** Choose from lettering, skate designs, characters, phrases, stencils and experimental pieces. Filter by category or search by title, lettering or pack number. After you place one, the selector reopens on the same design, search and page.
+- **Place and edit pieces on walls.** Aim at a flat surface to preview size and rotation before placing. In **Artwork Library → Edit placements on this map**, select a saved piece to move, scale, stretch its width, rotate, duplicate, reset or remove it. Each offline placement keeps its own settings and returns when you revisit the map or restart.
+- **Draw and save in Blackbook.** Use Marker, Line, Eraser and Picker on a transparent canvas with 16 inks and adjustable brush widths. Name a drawing, save it to your personal library, reopen it to edit, or place a copy on a wall.
+- **Draw patterns and reshape finished art.** Draw a small tile that repeats across its edges. Mirror brush strokes left to right, use four-way or radial symmetry, or repeat strokes around a centre. The reshape editor works on premades, imports and Blackbook drawings.
+- **Free-paint and erase.** Spray directly onto a wall in eight colours with a 3D can, an aiming arm, coloured mist and an adjustable hiss that follows the spray. Premade placement plays one short burst. Paint and Eraser each remember their own size. Wall paint and partial erasures save automatically per map. There is no fixed stroke-count limit. On heavily painted maps, ReSkate prioritises nearby and recent ink for display.
+- **Import and organise your artwork.** Prepare PNG, JPEG or WebP files with crop, rotate, transparent-margin trim and border removal. Check the edges on a checkerboard, light or dark background before importing. Bring in one piece or a collection of up to 12. Use folders, favourites, search and recently used items across premades, imports and saved drawings.
+- **Undo the edit you mean.** Editor Undo affects the current drawing. Reshape Undo affects the shape you are editing. The map placement history names the edit to undo or redo. Undoing a collection import changes library membership and keeps the source art.
+- **Publish and download in Public Artworks.** Browse artwork thumbnails, open a larger preview and download a copy to **Premade Art → My imports**. With a creator profile you can publish your work, report an entry or unpublish your own. A published piece is available when its creator is offline. Once downloaded, it stays in your local library.
+- **Share premades in a multiplayer session.** Players with the same mod version on the same map can receive built-in premade placements, including when they join after placement while the artist is still present. Freehand paint, imports and Blackbook wall placements are local.
+- **Groundwork for moving graffiti.** The editor now has frame tools for future moving artwork. No moving graffiti designs are included in this release.
+
+## How to use Public Artworks
 
 Open **Graffiti Lab → Public Artworks**. Browse and preview work from other sessions. Download a static piece, then find it in **Premade Art → My imports**. It stays on this PC when the game restarts. Publisher and downloader can use separate gallery profiles without joining the same skate session.
 
@@ -21,7 +32,7 @@ To publish, choose a creator profile on the **Account** tab. Choose your import 
 
 ## What's new in 0.6.12
 
-This update includes the following changes since 0.6.7.
+Version 0.6.12 included these changes since 0.6.7.
 
 - **Bring your own artwork.** Import a PNG, JPEG or WebP into **Premade Art → My imports**. Your designs stay on your PC and are available to place again after a restart.
 - **Spray with a can in hand.** Your skater reaches toward the wall with a textured 3D can. The arm follows the brush during freehand painting and makes a quick sweep when you confirm a premade. The selector reopens on the same piece, search and page so you can place it again.
@@ -44,7 +55,7 @@ Press **Ctrl+L**, or choose **Insert → Plugins → Graffiti Lab → Open Graff
 ## Import your own art
 
 1. In **Premade Art**, choose **Import Art**. Double-click **Import Artwork.html** in the folder that opens.
-2. Choose a PNG, JPEG or WebP and check the preview. The importer fits it to the 16 wall inks and up to 256 shapes. Bold shapes and clear outlines work best.
+2. Choose a PNG, JPEG or WebP and check the preview. Crop or rotate as needed, trim transparent margins, or remove a border that touches the image edge. The importer fits it to the 16 wall inks and up to 256 shapes. Bold shapes and clear outlines work best.
 3. Save the resulting `.graffiti` file beside the importer. Return to ReSkate and click **Refresh**.
 4. Select the design under **My imports** and choose **Place on Wall**.
 
@@ -53,11 +64,12 @@ Press **Ctrl+L**, or choose **Insert → Plugins → Graffiti Lab → Open Graff
 | What you want to do | How |
 | --- | --- |
 | Place a premade | Select a thumbnail and choose **Place on Wall**. Aim at a flat wall within 8 m. When **Wall ready** appears, left-click, press **Ctrl+P**, or press **A** on a controller. |
+| Resize or rotate a preview | While aiming, press **[** or **]** for size and **Q** or **E** for rotation. |
 | Cancel or remove a placement | Press **Ctrl+R** to cancel a preview. With the menus closed and no preview active, **Ctrl+R** removes your latest mark. |
 | Paint or erase directly | Open **Wall Paint** with **Ctrl+I**. Hold the left mouse button and drag, or toggle continuous spray with **Space** or **Flow**. Press **1–8** for colour, **E** to switch between Paint and Eraser, **Ctrl+Z** to undo your last stroke in Paint mode, and **Esc** to put the can away. |
 | Draw and save to Blackbook | Press **Ctrl+E** to open the editor. Draw on the transparent canvas with Marker or Line, then press **Ctrl+S** to save. **Ctrl+B** opens your gallery. Click a drawing to edit it, or choose **Place on wall** below its thumbnail. |
 
-Freehand wall paint saves automatically per map, including partial erasures, and returns after a restart. Premade and Blackbook wall placements last up to ten minutes on the current map. Your saved Blackbook originals and imported designs stay in your library.
+Freehand wall paint saves automatically per map, including partial erasures, and returns after a restart. Offline premade, imported and Blackbook placements also return to their saved walls after map travel or restart. ReSkate displays up to 16 local artwork placements and one preview at a time. Your saved Blackbook originals and imported designs stay in your library.
 
 ## Multiplayer
 
