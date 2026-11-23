@@ -8,7 +8,7 @@ local function tilePosition(slot)
     return 36+(slot-1)%columns*166, 355+math.floor((slot-1)/columns)*125
 end
 
-return function(pieces,onChoose,onBack,organise)
+return function(pieces,onChoose,onBack,organise,offerEmote)
     local stockCount=#pieces
     local importMessage,nextRead=nil,0
     local categories,searchText={},{}
@@ -35,12 +35,9 @@ return function(pieces,onChoose,onBack,organise)
     local function refresh(importsOnly,keep)
         local id=pieces[keep or 0] and pieces[keep].id
         for i=#pieces,stockCount+1,-1 do pieces[i],searchText[i]=nil,nil end
-        if not reskate.session.active() then
-            local designs=imports.list()
-            for _,piece in designs do
-                table.insert(pieces,piece)
-                table.insert(searchText,string.lower(piece.name.." My imports"))
-            end
+        for _,piece in imports.list() do
+            table.insert(pieces,piece)
+            table.insert(searchText,string.lower(piece.name.." My imports"))
         end
         if importsOnly then category,query=#categories,"" end
         for i,piece in pieces do if piece.id==id then keep=i break end end
@@ -102,7 +99,7 @@ return function(pieces,onChoose,onBack,organise)
             u.text(477,92,"REFRESH",14,dock.ink,"bold","centre")
         end
         if category==#categories then
-            u.text(36,330,if reskate.session.active() then "Personal art is available offline."
+            u.text(36,330,if reskate.session.active() then "Choose personal artwork to use as an emote."
                 else importMessage or "Import Art opens your local artwork folder.",15,dock.muted)
         end
         u.rect(36,164,492,46,"#18191C")
@@ -146,15 +143,19 @@ return function(pieces,onChoose,onBack,organise)
             u.text(148,825,string.upper(piece.name),if #piece.name>16 then 24 else 29,dock.ink,"heading")
             local detail=if piece.number then "No. "..piece.number else piece.colourway
             u.text(148,872,if piece.problem then "Re-export this image and refresh." else piece.category.."  ·  "..detail..string.format("  ·  %.2f × %.2f m",piece.width or 0.65,piece.height or 0.65),16,dock.muted)
-            u.rect(36,944,492,52,dock.blaze)
-            u.heading(51,960,"Place on Wall",21,dock.dark)
-            u.text(509,960,"Enter / A",17,dock.dark,"bold","right")
+            local canPlace=not piece.file or not reskate.session.active()
+            u.rect(36,908,492,32,if canPlace then "#38393B" else dock.blaze)
+            u.text(51,915,"Use as emote",17,if canPlace then dock.ink else dock.dark,"bold")
+            u.text(509,915,"M / Y",16,if canPlace then dock.ink else dock.dark,"bold","right")
+            u.rect(36,944,492,52,if canPlace then dock.blaze else "#26272A")
+            u.heading(51,960,"Place on Wall",21,if canPlace then dock.dark else dock.muted)
+            u.text(509,960,if canPlace then "Enter / A" else "Offline only",17,if canPlace then dock.dark else dock.muted,"bold","right")
         end
         u.text(36,1023,"D-pad / Arrows   Browse      Enter / A   Aim      Esc / B   Back",15,dock.muted,"bold")
     end)
     reskate.on("tick",function()
         if not open then return end
-        if not reskate.session.active() and reskate.time.now()>=nextRead then
+        if reskate.time.now()>=nextRead then
             for slot=1,math.min(pageSize,#visible-page()*pageSize) do
                 local piece=pieces[visible[page()*pageSize+slot]]
                 if piece.file and not piece.parts and not piece.problem then
@@ -168,13 +169,14 @@ return function(pieces,onChoose,onBack,organise)
         local pad=dock.buttons()
         local now={left=reskate.input.key("Left") or pad.left,right=reskate.input.key("Right") or pad.right,
             up=reskate.input.key("Up") or pad.up,down=reskate.input.key("Down") or pad.down,
-            accept=reskate.input.key("Enter") or pad.a,back=pad.b,click=cursor and cursor.left,
+            accept=reskate.input.key("Enter") or pad.a,emote=reskate.input.key("M") or pad.y,back=pad.b,click=cursor and cursor.left,
             import=reskate.input.key("I"),reload=reskate.input.key(116),slash=reskate.input.key(191),erase=reskate.input.key("Backspace"),
             prev=reskate.input.key("Q") or pad.lb,next=reskate.input.key("E") or pad.rb}
         local prev=held
         held=now
         if now.back and not prev.back then back() return end
         local accept=now.accept and not prev.accept
+        local equip=not typing and now.emote and not prev.emote
         if typing then
             local input=reskate.input.text(true):gsub("[^ -~]","")
             if input~="" then query=(query..input):sub(1,36) filter(visible[focus]) end
@@ -215,7 +217,13 @@ return function(pieces,onChoose,onBack,organise)
                 local left,top=tilePosition(slot)
                 if dock.inside(x,y,left,top,tileWidth,tileHeight) then focus=page()*pageSize+slot return end
             end
+            equip=dock.inside(x,y,36,908,492,32)
             accept=dock.inside(x,y,36,944,492,52)
+        end
+        if equip and #visible>0 then
+            local piece=pieces[visible[focus]]
+            if piece.file and not imports.load(piece) then reskate.ui.toast(piece.problem) return end
+            close() offerEmote(piece) return
         end
         if accept and #visible>0 then
             local piece=pieces[visible[focus]]
@@ -227,7 +235,7 @@ return function(pieces,onChoose,onBack,organise)
         end
     end)
     local function resume()
-        open,typing,held=true,false,{click=true,accept=true,back=true}
+        open,typing,held=true,false,{click=true,accept=true,emote=true,back=true}
         reskate.ui.open(title)
     end
     return {open=function(index)

@@ -1,16 +1,17 @@
 local library=require("library")
 local book=require("blackbook")
 local imports=require("imports")
-local wall=require("wall_art")
 local dock=require("dock")
 local function searchable(piece)
     return string.lower(table.concat({piece.name,piece.category or "",piece.lettering or "",piece.number or "",
         piece.creator or "",table.concat(piece.tags or {}," ")}," "))
 end
-return function(stock,onAim,exit,onMap)
+return function(stock,onAim,exit,onMap,useSelected,purpose,offerEmote,loadout)
+    local projects=require("studio_projects")
     local rows,queue,filtered,selected={}, {}, {},nil
     local query,folderName,folder,favourites,recent,page,note="", "", nil,false,false,1,""
     local taskIndex,open=1,false
+    local lastPurpose
     local inbox,inboxPage={},1
     local function filter()
         filtered=library.filter(rows,query,folder,favourites,recent)
@@ -24,6 +25,11 @@ return function(stock,onAim,exit,onMap)
     local reshape
     local function begin()
         if reshape then reshape.close() end
+        local intent=purpose()
+        if intent~=lastPurpose then
+            query,folder,favourites,recent,page="",nil,false,false,1
+            lastPurpose=intent
+        end
         rows,queue,selected,taskIndex,open={},{},nil,1,true
         inbox={} inboxPage=1
         for _,file in reskate.files.list("imports") or {} do
@@ -38,6 +44,9 @@ return function(stock,onAim,exit,onMap)
             if p.downloaded then table.insert(queue,p) end
         end
         for _,file in book.list() or {} do table.insert(queue,{drawing=file}) end
+        if intent=="Equip in selected slot" then
+            for _,id in projects.list() do table.insert(queue,{project=id}) end
+        end
         local _,why=library.get()
         note=why or ""
         filter()
@@ -57,19 +66,7 @@ return function(stock,onAim,exit,onMap)
         note="Copy saved to My imports."
     end)
     local function prepare(p)
-        if p.drawing and not p.parts then
-            local doc,why=book.read(p.drawing)
-            if not doc then return nil,why end
-            local parts,res=wall.compile(doc)
-            if not parts then return nil,res end
-            p.parts,p.gridWidth,p.width,p.height=parts,res,wall.width,wall.height
-            if doc.animation then
-                local asset,msg=require("media_format").fromDrawing(doc,wall)
-                if not asset then p.parts=nil return nil,msg end
-                p.media=asset p.frames=require("media_format").validate(asset,imports.decode) p.parts=p.frames[1]
-            end
-        elseif p.file and not imports.load(p) then return nil,p.problem end
-        return true
+        return projects.prepare(p,purpose()=="Equip in selected slot")
     end
     local function tick()
         if open and reshape.active() then reshape.tick() return end
@@ -90,6 +87,13 @@ return function(stock,onAim,exit,onMap)
         if p.drawing then
             local doc=book.read(p.drawing)
             if doc then p.id,p.name,p.category,p.aspect=p.drawing,doc.name,"Blackbook",2 p.search=searchable(p) table.insert(rows,p) end
+        elseif p.project then
+            local master,thumb=projects.open(p.project)
+            if master then
+                p.id,p.name,p.category,p.aspect="studio/"..p.project,master.name,"Editable project",master.aspect
+                p.rawFrame,p.search=thumb,searchable(p)
+                table.insert(rows,p)
+            end
         elseif p.downloaded then imports.load(p) p.search=searchable(p) end
         filter()
     end
@@ -134,13 +138,31 @@ return function(stock,onAim,exit,onMap)
         end
         if page>1 and ui:button("lib-prev","Previous page") then page-=1 end
         if page*6<#filtered and ui:button("lib-next","Next page") then page+=1 end
+        local intent=purpose()
+        if intent=="Equip in selected slot" then
+            if selected and ui:button("studio-use",intent,true) then
+                local ok,msg=useSelected(selected)
+                if ok then return end
+                note=tostring(msg)
+            end
+            ui:note(note)
+            if ui:button("emote-back","Back to loadout") then loadout() end
+            return
+        end
         if selected then
             local p=selected
             ui:info("Artwork",p.name:sub(1,60))
+            if intent and ui:button("studio-use",intent,true) then
+                local ok,msg=prepare(p)
+                if ok then ok,msg=useSelected(p) end
+                if ok then return end
+                note=tostring(msg)
+            end
             if ui:button("lib-place","Place on wall",true) then
                 local ok,msg=prepare(p)
                 if ok then open=false onAim(p) return else note=tostring(msg) end
             end
+            if not intent and ui:button("lib-emote","Use as emote") then offerEmote(p) return end
             if ui:button("lib-reshape","Reshape artwork",true) then
                 local ok,msg=prepare(p)
                 if ok then ok,msg=reshape.open(p) end
@@ -197,6 +219,10 @@ return function(stock,onAim,exit,onMap)
     end
     return {open=begin,close=function() open=false reshape.close() end,panel=panel,
         title=function() return if reshape.active() then "Reshape Artwork" else "Artwork Library" end,
-        back=function() if reshape.active() then reshape.close() return true end return false end}
+        back=function()
+            if reshape.active() then reshape.close() return true end
+            if purpose()=="Equip in selected slot" then loadout() return true end
+            return false
+        end}
 
 end

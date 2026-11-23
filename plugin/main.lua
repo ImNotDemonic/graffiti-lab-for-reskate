@@ -49,6 +49,8 @@ local unloadingMap
 local lifetime, capacity = 590000, 16
 local elapsed, sinceSample, epoch, assetError = 0, 0, nil, nil
 local selector, studio, paint, menu, publicGallery
+local emotes,emoteWheel,composition
+local sourceIntent
 local fromHome, pendingHome = false, false
 local function backToHome()
     pendingHome=fromHome
@@ -116,6 +118,7 @@ local function stopAiming()
 end
 
 local function reset()
+    if emotes then emotes.reset() end
     if publicGallery then publicGallery.close() end
     arm.reset()
     openAfterMenu, fromHome, pendingHome = false,false,false
@@ -147,6 +150,7 @@ end
 -- On build 20261116 the host has a lobby world before its first peer handshakes.
 -- Keep its confirmed premades across that edge. Discard private art and other worlds.
 local function changeConnection(world, map)
+    if emotes then emotes.reset() end
     if publicGallery then publicGallery.close() end
     arm.reset()
     fromHome,pendingHome=false,false
@@ -261,6 +265,10 @@ local function aim(piece, onPlaced, scale, angle, edit, returnOnBack)
     end
 end
 
+local function offerEmote(piece)
+    openPublic("emotes")
+    emoteWheel.offer(piece)
+end
 studio = makeStudio(function(file,doc)
     if sessionActive then return false,"Blackbook wall placement is available offline." end
     local parts, resolution = wallArt.compile(doc)
@@ -280,7 +288,7 @@ end, backToHome, function(index)
     if not index then return #placed end
     local mark=placed[#placed-index+1]
     return mark.name or (if mark.samples then "Freehand stroke" else mark.id)
-end,function() openPublic("map") end)
+end,function() openPublic("map") end,offerEmote)
 paint = makePaint(function(mark,asset,matrix,colour)
     if not mark then
         mark={id="paint",strokeId=store.nextId(),samples={}}
@@ -325,7 +333,7 @@ end
 selector = makeSelector(pieces, function(index)
     selected = index
     aim(pieces[index],selector.resume)
-end, backToHome,function() openPublic("library") end)
+end, backToHome,function() openPublic("library") end,offerEmote)
 
 local function place()
     if not aiming then return end
@@ -530,12 +538,43 @@ local function footprint(m)
     end
     return true
 end
+local function emoteService()
+    if not emotes then emotes=require("graffiti_emotes").create(pieces,scope) end
+    return emotes
+end
 local function buildPanels()
     local function libraryAim(p)
+        if sessionActive and (p.file or p.drawing) then reskate.ui.toast("Custom wall art is available offline.") return end
         publicGallery.close() aim(p,function() openPublic("library") end)
     end
     local screens={}
-    screens.library=require("library_screen")(pieces,libraryAim,function() publicGallery.close() backToHome() end,function() openPublic("map") end)
+    local function studioView() openPublic("composition") end
+    local function loadout() openPublic("emotes") end
+    local function selectSource(mode) openPublic("library",mode) end
+    emoteWheel=require("emote_wheel")(emoteService(),function() selectSource("Equip in selected slot") end,function() publicGallery.close() end)
+    composition=require("composition_screen")({
+        browse=function(new) selectSource(if new then "Start editable project" else "Insert image layer") end,
+        emotes=loadout,
+        use=function(action,p)
+            if action=="Place in World" then
+                if sessionActive then reskate.ui.toast("Custom wall art is available offline.") return end
+                publicGallery.close() aim(p,studioView)
+            elseif action=="Assign as Emote" then
+                offerEmote(p)
+            else openPublic() publicGallery.publishSource(p) end
+        end,
+    })
+    screens.composition,screens.emotes=composition,emoteWheel
+    screens.library=require("library_screen")(pieces,libraryAim,function() publicGallery.close() backToHome() end,function() openPublic("map") end,
+        function(p)
+            local ok,why
+            if sourceIntent=="Equip in selected slot" then
+                ok,why=emoteWheel.assign(p) if ok then loadout() end
+            else
+                ok,why=composition.insert(p,sourceIntent=="Start editable project") if ok then studioView() end
+            end
+            return ok,why
+        end,function() return sourceIntent end,offerEmote,loadout)
     screens.map=require("map_screen")({
         preview=mapPreview,library=function() openPublic("library") end,
         change=function(label,row,scale,angle,stretch)
@@ -562,15 +601,17 @@ local function buildPanels()
     })
     return require("gallery_screen")(backToHome,screens)
 end
-openPublic=function(view)
-    if (view=="library" or view=="map") and sessionActive then reskate.ui.toast("The personal library is available offline.") return end
+openPublic=function(view,intent)
+    sourceIntent=intent
+    if sessionActive and (view=="map" or (view=="library" and not intent)) then reskate.ui.toast("The personal library is available offline.") return end
     menu.close() selector.close() studio.close() paint.close() stopAiming()
     if not publicGallery then publicGallery=buildPanels() end
     publicGallery.open(view)
 end
 menu=makeMenu(function(index)
     if index==1 then openLibrary() elseif index==2 then openStudio("editor")
-    elseif index==3 then openPaint() elseif index==4 then openStudio("gallery") elseif index==6 then openPublic() end
+    elseif index==3 then openPaint() elseif index==4 then openStudio("gallery") elseif index==6 then openPublic()
+    elseif index==7 then openPublic("composition") end
 end, backToHome, paint, function()
     return {marks=artworkCount(),limit=capacity,handles=artHandles+(if preview then #preview.handles else 0),budget=handleBudget,
         strokes=ink.strokes,visiblePaint=ink.live,samples=ink.total}
@@ -597,6 +638,8 @@ reskate.on("menu_changed", function(state)
     if ready() then openHome() else reskate.ui.toast("Enter a map to open Graffiti Lab.") end
 end)
 local actions = {
+    ["Graffiti Emote Wheel"] = function() openPublic("emotes") emoteWheel.quick() end,
+    ["Graffiti Emote Wheel on pad"] = function() openPublic("emotes") emoteWheel.quick() end,
     ["Public Artworks"] = openPublic,
     ["Open Wall Paint"] = openPaint,
     ["Open Custom Editor"] = function() openStudio("editor") end,
@@ -623,6 +666,8 @@ local function action(name)
     end
 end
 reskate.input.bind("Open Wall Paint", "Ctrl+I")
+reskate.input.bind("Graffiti Emote Wheel", "Ctrl+J")
+reskate.input.bind("Graffiti Emote Wheel on pad", "Pad.Back+Pad.X")
 reskate.input.bind("Open Custom Editor", "Ctrl+E")
 reskate.input.bind("Open Blackbook", "Ctrl+B")
 reskate.input.bind("Open Graffiti Lab", "Ctrl+L")
@@ -632,7 +677,8 @@ reskate.input.bind("Place Switchback", "Ctrl+P")
 reskate.input.bind("Remove Switchback", "Ctrl+R")
 reskate.on("action", action)
 reskate.console.command("graffiti", "menu, library, editor, blackbook, paint, aim, place, remove or status", function(args)
-    if args[1]=="organise" or args[1]=="placements" then if ready() then openPublic(if args[1]=="organise" then "library" else "map") end return end
+    local views={organise="library",placements="map",studio="composition",emotes="emotes"}
+    if views[args[1]] then if ready() then openPublic(views[args[1]]) end return end
     local commands = {public = "Public Artworks", menu = "Open Graffiti Lab", library = "Open Premade Art", editor = "Open Custom Editor", blackbook = "Open Blackbook",
         aim = "Aim Switchback", place = "Place Switchback", remove = "Remove Switchback", paint = "Open Wall Paint"}
     if commands[args[1]] then action(commands[args[1]]) return end
@@ -649,9 +695,11 @@ reskate.console.command("graffiti", "menu, library, editor, blackbook, paint, ai
         tostring(world), tostring(map), sharing.count()))
 end)
 reskate.on("message",function(from,text)
+    if type(text)=="string" and text:sub(1,4)=="GE1|" and ready() then emoteService().receive(from,text) return end
     if ready() and sessionActive then sharing.receive(from,text,worldId,mapName) end
 end)
-reskate.on("player_left",function(player) sharing.drop(player.id) end)
+reskate.on("player_left",function(player) sharing.drop(player.id) if emotes then emotes.drop(player.id) end end)
+reskate.on("draw",function(d) if emotes then emotes.draw(d) end end)
 reskate.on("level_unloading", function()
     unloadingMap=store.map or mapName or true
     reset()

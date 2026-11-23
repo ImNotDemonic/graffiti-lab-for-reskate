@@ -6,7 +6,7 @@ local ink, muted, blaze, panel = "#F2EFE9", "#B5B2AC", "#FF5A1F", "#0D0E10F5"
 local canvas = {672, 252, 1152, 576}
 local perPage = 4
 
-return function(onPlace,onBack,mapMarks,editMap)
+return function(onPlace,onBack,mapMarks,editMap,offerEmote)
     local title=dock.editingScreen()
     local mode, doc, file, original = nil, book.new(), nil, nil
     local dirty, rename, pending = false, nil, nil
@@ -353,9 +353,12 @@ return function(onPlace,onBack,mapMarks,editMap)
                 label(x+8,y+126,if #name>18 then name:sub(1,17).."…" else name,"bold",18)
                 target(x,y,234,160,function() edit(card) end)
                 if card.doc then
-                    button(x,y+161,234,28,"Place on wall",function()
+                    button(x,y+161,137,28,"Place on wall",function()
                         local ok,why = onPlace(card.file,card.doc)
                         if not ok then note = why end
+                    end)
+                    button(x+140,y+161,94,28,"Emote",function()
+                        offerEmote({id=card.file,drawing=card.file,name=card.doc.name})
                     end)
                 end
             end

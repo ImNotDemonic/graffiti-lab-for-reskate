@@ -12,6 +12,7 @@ from zipfile import ZipFile, ZIP_DEFLATED
 from PIL import Image
 from fbmod import package
 from arch_textures import prepare as prepare_arch
+from build_lettering_fonts import DISPLAY_FACES
 
 ROOT = Path(__file__).resolve().parents[1]
 GAME_HASH = "fbce74d5e28ef525dbba2cb4adbebc13405bdbd88f31bc940bca45e4ae88b8f9"
@@ -193,6 +194,20 @@ def build(game, studio, author, destination, native_from=None):
             archive.write(ROOT / "art/menu-type.png", "art/menu-headings-081.png")
             archive.write(scratch / "catalogue.json", "art/catalogue.json")
             archive.write(ROOT / "plugin/native_arch.lua", "plugin/native_arch.lua")
+            for module in ("studio_stencils", "studio_symbols", "shape_preview", "lettering", "composition", "studio_projects", "composition_screen",
+                           "graffiti_emotes", "emote_wheel"):
+                archive.write(ROOT / f"plugin/{module}.lua", f"plugin/{module}.lua")
+            font_files = [face + suffix for face in (*DISPLAY_FACES, "Pixel")
+                          for suffix in (".glfont", "-LICENSE.txt")]
+            for name in (*font_files, "layout.json", "README.md"):
+                archive.write(ROOT / "art/lettering" / name, "art/lettering/" + name)
+            directory = ROOT / "art/lettering"
+            for name in DISPLAY_FACES:
+                for suffix in (".metrics.json", ".ink"):
+                    path = directory / (name + suffix)
+                    archive.write(path, "art/lettering/" + path.name)
+            for path in sorted(directory.glob("writing-*.png")):
+                archive.write(path, "art/lettering/" + path.name)
             for file in sorted((scratch / "arch").iterdir()):
                 archive.write(file, "art/arch/" + file.name)
             for sheet in sorted(scratch.glob("premades*.png")):
@@ -214,6 +229,8 @@ def build(game, studio, author, destination, native_from=None):
             mist_texture(scratch / "spray-mist.png")
             archive.write(scratch / "spray-mist.png", "art/spray-mist.png")
             archive.write(ROOT / "docs/THUNDERSTORE_README.md", "README.md")
+            archive.write(ROOT / "CHANGELOG.md", "CHANGELOG.md")
+            archive.write(ROOT / "docs/LAYERED_STUDIO.md", "docs/LAYERED_STUDIO.md")
         with ZipFile(scratch / "GraffitiLab.zip") as archive:
             if archive.testzip():
                 raise ValueError("ZIP CRC verification failed")

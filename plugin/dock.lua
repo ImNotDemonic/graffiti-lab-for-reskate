@@ -34,6 +34,7 @@ function dock.draw(d)
         local top=extraTitles[label]
         if top then u.art(x,y,height*6.0,height,310,top,510,top+50,c or dock.ink) return end
         local item=titles[label]
+        if not item then u.text(x,y,string.upper(label),height,c or dock.ink,"heading") return end
         local t=2+item[1]*56
         u.art(x,y,height*item[2],height,2,t,302,t+50,c or dock.ink)
     end

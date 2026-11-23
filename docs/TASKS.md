@@ -17,3 +17,9 @@ The [extension plan and feature status](EXTENSION.md) tracks save compatibility,
 ## 0.8.1 qualification
 
 The [feature status and reproducible checks](EXTENSION.md#081-development-build) cover all roadmap features. The open game checks are two-map placement of reshaped copies, silent animation playback, and a clean second installation downloading media and placing it offline. Public gallery cards, source compatibility and the 100,000-sample paint test have targeted regressions.
+
+## 0.9.0 development
+
+- [x] Build a layered project, produce a versioned premade, equip it and render the actual design above the local skater. Test a private custom activation on a separate Luau process with empty storage.
+- [ ] Run the [two-client acceptance check](LAYERED_STUDIO.md#acceptance-checks) on signed-in ReSkate installations. Check local and remote head tracking through turns, crouches and bails, solid-wall occlusion, controller activation and map departure.
+- [ ] Measure frame time with four simultaneous emotes and a dense Studio canvas on a lower-spec PC.

@@ -125,6 +125,7 @@ escape() assert(active=="Graffiti Lab" and has("Acid · 65 mm"))
 escape() assert(active==nil)
 emit("action","Open Graffiti Lab on pad") step()
 buttons.down=true step() buttons.down=false step() -- Public Artworks follows Settings.
+buttons.down=true step() buttons.down=false step() -- My Artwork & Emotes follows Public Artworks.
 buttons.down=true step() buttons.down=false step()
 buttons.a=true step() buttons.a=false step()
 assert(active=="Premade Art","controller failed to open the first row after wrap")
@@ -177,7 +178,50 @@ size=v(1280,720,0) emit("action","Open Graffiti Lab") step()
 click(180,560) assert(has("DEFAULT KEY"))
 print("PASS: menu navigation, offline and online placement returns, held mouse and controller inputs, Blackbook page, editor erase/undo, can settings, map marks and 720p hitboxes")
 """
-def run(luau, checks, name="menu", capture=False, catalogue=None):
+def font_host(characters):
+    # Give standalone Luau real packed records for the exercised glyphs.
+    folder = ROOT / "art/lettering"
+    mappings = json.loads((folder / "layout.json").read_text("ascii"))
+    points = set(map(ord, characters)) | set(range(32, 127)) | {0xfffd}
+    compose = {k: v for k, v in mappings["compose"].items() if set(map(ord, k)) <= points}
+    arabic = {k: v for k, v in mappings["arabic"].items() if ord(k) in points}
+    points.update(compose.values())
+    for forms in arabic.values():
+        points.update(forms.values())
+    def literal(obj):
+        if isinstance(obj, dict):
+            return "{" + ",".join(f"[{literal(k)}]={literal(v)}" for k,v in obj.items()) + "}"
+        if isinstance(obj, list):
+            return "{" + ",".join(map(literal, obj)) + "}"
+        return json.dumps(obj, ensure_ascii=False)
+    source = ["do local files={} local metrics={}"]
+    for path in sorted(folder.glob("*.metrics.json")):
+        face = json.loads(path.read_text("ascii"))
+        bitmap = path.with_name(path.name.split(".")[0] + ".ink")
+        original = bitmap.read_bytes()
+        subset = bytearray()
+        face["glyphs"] = {k: v for k, v in face["glyphs"].items() if ord(k) in points}
+        for data in face["glyphs"].values():
+            start = data[5]
+            data[5] = len(subset)
+            subset.extend(original[start:start + ((data[3]+7)//8)*data[4]])
+        source.append(f'metrics["art/lettering/{path.name}"]={literal(face)}')
+        source.append(f'files["art/lettering/{bitmap.name}"]=("{subset.hex()}"):gsub("..",'
+                      'function(h) return string.char(tonumber(h,16)) end)')
+    for path in sorted(folder.glob("*.glfont")):
+        data = path.read_bytes()
+        records = b"".join(data[i:i+36] for i in range(0,len(data),36)
+                           if int.from_bytes(data[i:i+3], "big") in points)
+        source.append(f'files["art/lettering/{path.name}"]=("{records.hex()}"):gsub("..",'
+                      'function(h) return string.char(tonumber(h,16)) end)')
+    source.append('reskate.package.read=function(path) return files[path] end')
+    source.append('local previous=reskate.package.read_json')
+    source.append('reskate.package.read_json=function(path) if path=="art/lettering/layout.json" then return '
+                  + literal({"compose":compose, "arabic":arabic}) + ' end return metrics[path] or previous(path) end end')
+    return "\n".join(source)
+
+
+def run(luau, checks, name="menu", capture=False, catalogue=None, font_characters=""):
     if catalogue is None:
         catalogue = json.loads((ROOT / "art/catalogue.json").read_text(encoding="utf-8"))
     rows = []
@@ -189,8 +233,11 @@ def run(luau, checks, name="menu", capture=False, catalogue=None):
         fields.append("thumb={" + ",".join(map(str, piece.get("thumb", [0, 0, 1, 1]))) + "}")
         rows.append("{" + ",".join(fields) + "}")
     with TemporaryDirectory() as directory:
-        code = [ADAPTER, "local testCatalogue={" + ",\n".join(rows) + "}", HOST]
+        code = [ADAPTER, "local testCatalogue={" + ",\n".join(rows) + "}", HOST, font_host(font_characters)]
         for module in ("dock", "surface", "sharing", "wall_codec", "wall_store", "wall_ink", "media_format", "playback", "pattern", "blackbook", "wall_art", "paint", "studio", "imports", "library", "native_arch", "placements", "map_screen", "reshape", "reshape_screen", "library_dock", "library_screen", "gallery", "gallery_dock", "gallery_screen", "selector", "menu", "spray_fx", "spray_arm"):
+            source = (ROOT / "plugin" / (module + ".lua")).read_text(encoding="utf-8")
+            code.append(f"modules.{module}=(function()\n{source}\nend)()")
+        for module in ("studio_stencils", "studio_symbols", "shape_preview", "lettering", "composition", "studio_projects", "composition_screen", "graffiti_emotes", "emote_wheel"):
             source = (ROOT / "plugin" / (module + ".lua")).read_text(encoding="utf-8")
             code.append(f"modules.{module}=(function()\n{source}\nend)()")
         code.extend([(ROOT / "plugin/main.lua").read_text(encoding="utf-8"), checks])

@@ -12,6 +12,7 @@
     "audio",
     "input",
     "session.read",
+    "session.skaters",
     "net.session",
     "net.http",
     "console",

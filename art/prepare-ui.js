@@ -100,12 +100,34 @@ async function loadImage(){
     } else src=await createImageBitmap(selected);
     if(ticket!==revision){src.close?.();return;}
     if(src.width*src.height>40000000){src.close?.();throw Error('Choose a source up to 40 megapixels.');}
-    original=src;filename=(selected.name.replace(/\.[^.]+$/,'').replace(/[^a-zA-Z0-9 _-]/g,'').slice(0,38).trim()||'My artwork')+' edit.graffiti';
-    get('title').value=filename.slice(0,-9); form.reset();corners=structuredClone(cornersDefault);committed=JSON.stringify(options());undo=[];redo=[];
-    const before=get('before'),k=Math.min(1,600/Math.max(src.width,src.height));before.width=Math.max(1,Math.round(src.width*k));before.height=Math.max(1,Math.round(src.height*k));before.getContext('2d').drawImage(src,0,0,before.width,before.height);
-    render();
+    useSource(src,(selected.name.replace(/\.[^.]+$/,'').replace(/[^a-zA-Z0-9 _-]/g,'').slice(0,38).trim()||'My artwork')+' edit');
   }catch(e){if(ticket===revision)status.textContent=e.message;}
 }
+function useSource(src,name){
+  original=src; filename=name+'.graffiti'; get('title').value=name;
+  form.reset();corners=structuredClone(cornersDefault);committed=JSON.stringify(options());undo=[];redo=[];
+  const before=get('before'),k=Math.min(1,600/Math.max(src.width,src.height));
+  before.width=Math.max(1,Math.round(src.width*k));before.height=Math.max(1,Math.round(src.height*k));
+  before.getContext('2d').drawImage(src,0,0,before.width,before.height);
+  render();
+}
+get('make-lettering').onclick=()=>{
+  const field=get('lettering-text');
+  if(!field.value.trim()){field.focus();status.textContent='Type your lettering first.';return;}
+  const lines=field.value.split(/\r?\n/),font='bold 64px '+get('lettering-font').value;
+  const measure=make(1,1).getContext('2d');measure.font=font;
+  const metrics=lines.map(line=>measure.measureText(line));
+  const width=Math.ceil(Math.max(1,...metrics.map(m=>Math.max(m.width,m.actualBoundingBoxLeft+m.actualBoundingBoxRight))))+24;
+  const lineHeight=Math.ceil(Math.max(80,...metrics.map(m=>m.actualBoundingBoxAscent+m.actualBoundingBoxDescent+8)));
+  const height=lines.length*lineHeight+24;
+  const w=Math.max(width,height/16),h=Math.max(height,width/16),scale=Math.min(1,2048/Math.max(w,h));
+  const src=make(Math.ceil(w*scale),Math.ceil(h*scale)),ctx=src.getContext('2d');
+  ctx.scale(scale,scale);ctx.font=font;ctx.fillStyle=get('lettering-ink').value;
+  ctx.textAlign='center';ctx.direction=getComputedStyle(field).direction;
+  lines.forEach((line,i)=>ctx.fillText(line,w/2,(h-height)/2+12+i*lineHeight+(lineHeight+metrics[i].actualBoundingBoxAscent-metrics[i].actualBoundingBoxDescent)/2));
+  revision++;original?.close?.();file.value='';
+  useSource(src,field.value.replace(/[^a-zA-Z0-9 _-]/g,' ').trim().slice(0,38)||'My lettering');
+};
 file.onchange=()=>{original?.close?.();loadImage();};
 form.oninput=update;
 form.onchange=e=>{commit(e.target.dataset.action||'artwork adjustment');update();};

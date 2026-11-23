@@ -152,5 +152,12 @@ return function(onBack,localScreens)
         end
         profiles() s.rows={} s.page=1 s.more=false
         reskate.ui.open(publicScreen) actions.tab(1)
-    end,close=close,active=function() return open end}
+    end,close=close,active=function() return open end,
+        publishSource=function(piece)
+            actions.tab(2)
+            for _,item in s.sources do
+                if item.file==piece.file or item.id==piece.id then actions.source(item) return end
+            end
+            s.note="Choose your saved Studio premade to publish."
+        end}
 end

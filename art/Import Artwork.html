@@ -8,6 +8,12 @@ fieldset{border:1px solid #474749;margin:1rem 0}fieldset label{display:inline-bl
 </style>
 <main><h1>Prepare artwork</h1>
 <label>Original image, captured photo or existing artwork <input id="file" type="file" accept="image/png,image/jpeg,image/webp,.graffiti"></label>
+<details><summary>Type lettering with system fonts</summary>
+<label>Text <textarea id="lettering-text" dir="auto" rows="3" cols="40" maxlength="512"></textarea></label>
+<label>Font <select id="lettering-font"><option value="sans-serif">Bold sans</option><option value="serif">Serif</option><option value="cursive">Script</option><option value="monospace">Monospace</option></select></label>
+<label>Ink <input id="lettering-ink" type="color" value="#ff642d"></label>
+<button id="make-lettering" type="button">Preview lettering as artwork</button>
+</details>
 <div class="previews"><figure><figcaption>Original</figcaption><canvas id="before"></canvas></figure><figure><figcaption>Wall preview</figcaption><canvas id="preview"></canvas></figure></div>
 <label>Preview background <select id="backdrop"><option value="">Checkerboard</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
 <form id="settings"><fieldset><legend>Crop and rotate</legend><label>Left % <input type="number" name="left" min="0" max="99" value="0" data-action="artwork crop"></label><label>Right % <input type="number" name="right" min="0" max="99" value="0" data-action="artwork crop"></label><label>Top % <input type="number" name="top" min="0" max="99" value="0" data-action="artwork crop"></label><label>Bottom % <input type="number" name="bottom" min="0" max="99" value="0" data-action="artwork crop"></label><label>Rotation <select name="rotate"><option>0</option><option>90</option><option>180</option><option>270</option></select>°</label></fieldset>

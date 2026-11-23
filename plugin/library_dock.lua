@@ -9,11 +9,13 @@ end
 return function(back)
     local controls,targets={},{}
     local focus,editing,sliding,pending,value,held,scale
+    local selectAll=false
     local scroll,maximum,title=0,0,nil
     local top,bottom=164,971
     local function reset()
         controls,targets={},{}
         focus,editing,sliding,pending,value=nil,nil,nil,nil,nil
+        selectAll=false
         held={mouse=true,enter=true} scroll,maximum=0,0
     end
     reset()
@@ -25,11 +27,16 @@ return function(back)
         return current
     end
     local ui={}
+    function ui:editingGesture()
+        if sliding then return sliding.row.id end
+        return editing
+    end
     function ui:button(id,label,primary) return widget("button",id,label,false,{primary=primary}) end
     function ui:text(id,label,current,hint) return widget("text",id,label,current,{hint=hint}) end
     function ui:slider(id,label,current,lo,hi) return widget("slider",id,label,current,{lo=lo,hi=hi}) end
     function ui:tabs(id,options,selected) return widget("tabs",id,"",selected,{options=options}) end
     function ui:piece(id,p,selected) return widget("piece",id,p.name,false,{piece=p,selected=selected}) end
+    function ui:inks(id,selected,label) return widget("inks",id,label,selected) end
     function ui:note(label) if label~="" then table.insert(controls,{kind="note",label=label}) end end
     function ui:info(label,display) table.insert(controls,{kind="info",label=label,value=display}) end
     local function draw(d,name,panel)
@@ -53,7 +60,7 @@ return function(back)
             local kind=row.kind
             if kind~="piece" and column~=0 then column=0 y+=117 end
             local h=if kind=="piece" then 109 elseif kind=="slider" then 53 elseif kind=="text" then 61
-                elseif kind=="note" then 35 elseif kind=="info" then 34 else 38
+                elseif kind=="inks" and row.label then 52 elseif kind=="note" then 35 elseif kind=="info" then 34 else 38
             local visible=y>=top and y+h<=bottom
             if kind=="piece" then
                 local p=row.piece
@@ -64,7 +71,9 @@ return function(back)
                     local w=math.min(147,75*(p.aspect or 1))
                     local height=w/(p.aspect or 1)
                     local l,t=x+(158-w)/2,y+(83-height)/2
-                    if p.textureParts then
+                    if p.stencil then
+                        require("shape_preview").draw(u,p.stencil,l,t,w,height,palette[p.ink],palette[2],100)
+                    elseif p.textureParts then
                         require("native_arch").draw(d,u,p.textureParts,p.textureSheet,l,t,w,height)
                     elseif p.parts then
                         for _,part in p.parts do
@@ -72,12 +81,30 @@ return function(back)
                         end
                     elseif p.sheet then d:image(p.sheet,u.p(l,t),u.p(l+w,t+height),{uv=p.thumb})
                     else u.text(x+10,y+32,short(p.category or "Artwork",15),16,dock.muted,"body") end
+                    local source=if p.category=="Editable project" then "PROJECT" elseif p.frames and #p.frames>1 then "ANIMATED"
+                        elseif p.drawing then "BLACKBOOK" elseif p.downloaded then "GALLERY" elseif p.file then "IMPORT"
+                        elseif p.sheet then "PREMADE" else nil
+                    if source then
+                        u.rect(x+4,y+4,10+#source*8,17,dock.dark)
+                        u.text(x+8,y+6,source,11,dock.ink,"bold")
+                    end
                     u.text(x+6,y+88,string.upper(short(p.name,16)),14,if row.selected then dock.dark else dock.ink,"bold")
                 end
                 hit(row,x,y,158,h)
                 column=(column+1)%3
                 if column==0 then y+=117 end
                 continue
+            elseif kind=="inks" then
+                local topY=y+(if row.label then 20 else 5)
+                if visible and row.label then u.text(36,y,string.upper(row.label),14,dock.muted,"bold") end
+                for i,colour in palette do
+                    local x=36+(i-1)*31
+                    if visible then
+                        u.rect(x,topY,28,28,colour)
+                        if i==row.value then u.border(x-1,topY-2,30,32,dock.ink) end
+                    end
+                    hit(row,x,if row.label then topY else y,30,if row.label then 28 else h,i)
+                end
             elseif kind=="tabs" then
                 local w=(490-(#row.options-1)*5)/#row.options
                 for i,label in row.options do
@@ -99,7 +126,14 @@ return function(back)
                     u.text(36,y,string.upper(row.label),13,dock.muted,"bold")
                     u.rect(36,y+20,490,38,"#1A1B1E")
                     u.border(36,y+20,490,38,if editing==row.id then dock.blaze else "#49484B")
-                    local s=if editing==row.id then row.value.."|" elseif row.value~="" then row.value else row.hint
+                    local s=if row.value~="" then row.value else row.hint
+                    if row.id=="word" then s=s:gsub("\n"," ↵ ") end
+                    if editing==row.id then
+                        s=if row.id=="word" then row.value:gsub("\n"," ↵ ") else row.value
+                        if utf8.len(s) and utf8.len(s)>45 then s="…"..s:sub(utf8.offset(s,-44)) end
+                        s..="|"
+                        if selectAll then u.rect(40,y+24,482,30,"#793A22") end
+                    end
                     u.text(46,y+29,short(s,48),17,dock.ink)
                 end
                 hit(row,36,y+20,490,38)
@@ -107,7 +141,9 @@ return function(back)
                 local x=36+490*(row.value-row.lo)/(row.hi-row.lo)
                 if visible then
                     u.text(36,y,string.upper(row.label),14,dock.muted,"bold")
-                    local unit=if row.id=="angle" then "°" else "%"
+                    local unit=if row.id=="angle" then "°" elseif row.id=="cooldown" then " s"
+                        elseif row.id=="brush-size" then " px"
+                        elseif row.id=="spacing" or row.id=="ink" or row.id=="brush-ink" or row.id=="repeat" then "" else "%"
                     u.text(526,y,tostring(math.round(row.value))..unit,16,dock.ink,"bold","right")
                     u.rect(36,y+33,490,5,"#525154")
                     if x>36 then u.rect(36,y+33,x-36,5,dock.blaze) end
@@ -146,7 +182,8 @@ return function(back)
         local pad=dock.buttons()
         local keys={mouse=c and (c.left or reskate.input.key(1)),enter=reskate.input.key("Enter") or pad.a,
             back=pad.b,up=reskate.input.key("Up") or pad.up,down=reskate.input.key("Down") or pad.down,
-            left=reskate.input.key("Left") or pad.left,right=reskate.input.key("Right") or pad.right,erase=reskate.input.key("Backspace")}
+            left=reskate.input.key("Left") or pad.left,right=reskate.input.key("Right") or pad.right,erase=reskate.input.key("Backspace"),
+            selectAll=editing=="word" and reskate.input.key(0x11) and reskate.input.key(0x41)}
         local old=held held=keys
         local function edge(k) return keys[k] and not old[k] end
         if edge("back") then if editing then editing=nil else back() end return end
@@ -161,7 +198,8 @@ return function(back)
             editing=nil
             if r.kind=="slider" then
                 if pointer then sliding=t pending,value=r.id,math.round(r.lo+(r.hi-r.lo)*math.clamp((x-t.x)/t.w,0,1)) end
-            elseif r.kind=="text" then editing=r.id reskate.input.text(true)
+            elseif r.kind=="text" then
+                editing=r.id selectAll=(r.id=="word" and (r.value=="TAG" or r.value=="Tag")) reskate.input.text(true)
             else pending,value=r.id,t.option or true end
         end
         if edge("mouse") then
@@ -174,9 +212,13 @@ return function(back)
         if editing and current then
             local v=current.row.value
             local extra=reskate.input.text(true):gsub("[%c]","")
-            if edge("erase") and #v>0 then v=v:sub(1,(utf8.offset(v,-1) or #v)-1) end
+            if edge("selectAll") then selectAll=true return end
+            local lineBreak=editing=="word" and edge("enter") and reskate.input.key(0x10)
+            if lineBreak then extra="\n"..extra end
+            if selectAll and (extra~="" or edge("erase")) then v="" selectAll=false
+            elseif edge("erase") and #v>0 then v=v:sub(1,(utf8.offset(v,-1) or #v)-1) end
             if extra~="" or v~=current.row.value then pending,value=editing,v..extra end
-            if edge("enter") then editing=nil end
+            if edge("enter") and not lineBreak then editing=nil selectAll=false end
             return
         end
         if current and edge("enter") then activate(current,false) return end

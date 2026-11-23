@@ -2,6 +2,17 @@
 
 Paint walls in ReSkate with 46 premades, your own Blackbook drawings or a freehand spray can. Press **Ctrl+L** or **Back + Y** to open Graffiti Lab. Choose **Public Artworks** to share your designs and download other players’ pieces.
 
+## What's new in 0.9.0
+
+- **Use any saved artwork as an emote.** In **Premade Art**, select one of the 46 bundled designs or a piece from **My imports** and choose **Use as emote**. Personal premades, collection items, reshaped copies and Public Artworks downloads all work. Pick one of eight slots and confirm **Equip**. Blackbook drawings have an **Emote** button in **Saved Gallery**, and the loadout can equip saved Studio projects directly.
+- **Show your art above your skater.** Press **Ctrl+J** or **Back + X** to open the wheel. Emotes follow the skater’s head for five seconds. You can adjust the cooldown or hide incoming emotes. Custom emotes carry a small ink copy when activated in a session. Animated artwork keeps its timing, and fine marks survive reduction even when they fall between preview pixels.
+- **Build an editable piece in My Artwork & Emotes.** Combine shapes, lettering, freehand strokes and imported art on separate layers. Reorder, group, lock, hide or transform layers. Use snapping and guides to line up a design. Save the project to edit later, export a premade, place it on a wall or open the Public Artworks publication form.
+- **Draw with 59 shapes and 16 inks.** Choose a colour before adding a shape or recolour its layer in **Compose**. Smooth outlines preserve curves, corners and cutouts as you resize or rotate. Older layers can opt in with **Use smooth shape**. **Preview wall detail** shows the ink rendition before you export.
+- **Type in 20 offline fonts.** Try Flow (Pacifico) for handwriting, Script (Lobster) for joined letters or Brush (Sedgwick Ave Display) for a hand-drawn tag. Text stays editable, including line breaks, spacing, alignment and arch. The image preparer can also turn system-font lettering or emoji into an imported piece.
+- **Paint on a separate layer.** Brush, Line, Eraser and Picker work with adjustable width, opacity, stabilisation, symmetry and repeating tiles. Undo and redo work on whole strokes. The Studio saves a recovery draft and keeps the layers when you reopen a saved project.
+
+The local overhead display and Studio wall placement were tested in San Vansterdam. Automated checks covered all 46 premades, each personal artwork source and delivery to a simulated second player. Live emote verification between two signed-in players is still pending.
+
 ## What's new in 0.8.2
 
 - **Wall Paint and Premade Art recognise flat walls by shape.** Both tools use the map’s collision geometry, so map authors can give a wall any name. Aim at a continuous, near-vertical face within 8 m of the camera. The whole brush or piece needs to fit. If a premade preview disappears near a corner, move it inward or reduce its size.
@@ -40,6 +51,9 @@ To check on your setup, try Wall Paint and the same premade on the same wall wit
 
 ## Features
 
+- **Equip artwork as overhead emotes.** Fill eight slots with bundled premades, your imported and reshaped pieces, collection items, Public Artworks downloads, Blackbook drawings or layered Studio projects. Open the wheel with **Ctrl+J** or **Back + X**. You can equip personal art during a session without publishing it.
+- **Make layered graffiti in My Artwork & Emotes.** Combine shapes, editable text, freehand paint and imported images. Group and transform layers, save an editable project, export a wall premade or share a copy through Public Artworks.
+- **Use 59 shapes and 20 lettering fonts.** Choose from 16 shape colours and recolour individual layers. Type multiline text in handwriting, display or pixel fonts and adjust spacing, alignment or arch. Preview the ink detail before placing the design.
 - **Browse 46 premades.** Choose from lettering, skate designs, characters, phrases, stencils and experimental pieces. Filter by category or search by title, lettering or pack number. After you place one, the selector reopens on the same design, search and page.
 - **Place and edit pieces on walls.** Aim at a flat surface to preview size and rotation before placing. In **Artwork Library → Edit placements on this map**, select a saved piece to move, scale, stretch its width, rotate, duplicate, reset or remove it. Each offline placement keeps its own settings and returns when you revisit the map or restart.
 - **Draw and save in Blackbook.** Use Marker, Line, Eraser and Picker on a transparent canvas with 16 inks and adjustable brush widths. Name a drawing, save it to your personal library, reopen it to edit, or place a copy on a wall.
@@ -78,6 +92,7 @@ Open **Insert → Plugins → Graffiti Lab → Open Graffiti Lab**, then press *
 | Ctrl+E | Open the Custom Editor. Drag with Marker or click two endpoints with Line. Click a swatch or the size controls to change the brush. |
 | Ctrl+S | Save the current drawing to Blackbook. **Rename drawing** changes its title. A later save updates the same entry. |
 | Ctrl+B | Open Blackbook. Click a thumbnail to edit, **Place on wall** below it to preview, or **New drawing** for a blank canvas. |
+| Ctrl+J / Back + X | Open the emote wheel. Choose slot 1–8 or cycle left/right, then press Enter or A. Clicking an occupied slot displays it immediately. |
 | Ctrl+Z / Ctrl+Y | Undo or redo a stroke in the editor. Esc closes the screen and keeps the current draft for this session. |
 | Ctrl+L | Open the main menu. In **Premade Art**, search by title, lettering or the pack’s three-digit number. Click a category or cycle with Q/E or LB/RB. Browse nine pieces per page with the page buttons, arrow keys or D-pad. Select a thumbnail and choose **Place on Wall** or press Enter to aim. |
 | Ctrl+G | Enter or cancel aim mode using the current design. A translucent preview appears on a suitable wall within eight metres. |
@@ -100,16 +115,16 @@ On Windows x64, use Python 3.11+ with Pillow, a checkout of ReSkate at `8e4aefca
 
 ```powershell
 python tools/build_author.py --sdk "C:/dev/ReSkate" --llvm "C:/dev/llvm-mingw"
-python tools/package_mod.py --game "C:/Games/ReSkate" --studio "C:/Tools/ReSkate Studio/reskate_cli.exe" --out outputs/GraffitiLab-0.8.2-Thunderstore.zip
+python tools/package_mod.py --game "C:/Games/ReSkate" --studio "C:/Tools/ReSkate Studio/reskate_cli.exe" --out outputs/GraffitiLab-0.9.0-Thunderstore.zip
 ```
 
-For the 0.8.2 script update, reuse the native assets from the published 0.8.1 package. Run the following from the checkout. When changing native geometry, textures or shaders, run the full Studio build above.
+For 0.9.0, you can reuse the tested native wall assets from the 0.8.2 ZIP. The packager takes the Studio, emote scripts, fonts and documentation from this checkout. When changing native geometry, textures or shaders, run the full Studio build above.
 
 ```powershell
-python tools/package_mod.py --native-from "C:/path/to/verified/GraffitiLab-0.8.1-Thunderstore.zip" --out outputs/GraffitiLab-0.8.2-Thunderstore.zip
+python tools/package_mod.py --native-from "C:/path/to/verified/GraffitiLab-0.8.2-Thunderstore.zip" --out outputs/GraffitiLab-0.9.0-Thunderstore.zip
 ```
 
-The packager uses [the Thunderstore README](docs/THUNDERSTORE_README.md) for the ZIP's root README and includes the code licence and artwork notice.
+The ZIP includes the package README, changelog, Studio controls, code licence, artwork notice and individual font licences. [Thunderstore README](docs/THUNDERSTORE_README.md) · [Changelog](CHANGELOG.md) · [Studio controls](docs/LAYERED_STUDIO.md) · [Font credits](art/lettering/README.md)
 
 The catalogue in `art/catalogue.json` maps each design to a stable decal slot. The pack’s editable SVGs and transparent PNG masters are grouped by category in `art/premades/`. The builder fits the PNGs into transparent 512 × 512 wall textures at their original proportions and creates 480 × 480 thumbnail sheets for the selector. Slots 16–31 belong to the 16 Blackbook inks. Keep those slots, the palette order and existing artwork IDs stable. Studio compiles the 46 premades, 16 inks and 40 Bubble Throw arch strips alongside the spray can from `art/spray-can/`. The GPL offline tools derive from the gBGYo decal recipe and link ReSkate's resource readers. Their source and licence are under `tools/`. [Upstream decal author](https://github.com/gBGYo/ReSkate_blood) · [LLVM-MinGW release](https://github.com/mstorsjo/llvm-mingw/releases/tag/20261117)
 

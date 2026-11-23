@@ -2,6 +2,17 @@
 
 Paint walls in ReSkate with 46 premades, your own Blackbook drawings or a freehand spray can. Press **Ctrl+L** or **Back + Y** to open Graffiti Lab. Choose **Public Artworks** to share your designs and download other players’ pieces.
 
+## What's new in 0.9.0
+
+- **Use any saved artwork as an emote.** In **Premade Art**, select one of the 46 bundled designs or a piece from **My imports** and choose **Use as emote**. Personal premades, collection items, reshaped copies and Public Artworks downloads all work. Pick one of eight slots and confirm **Equip**. Blackbook drawings have an **Emote** button in **Saved Gallery**, and the loadout can equip saved Studio projects directly.
+- **Show your art above your skater.** Press **Ctrl+J** or **Back + X** to open the wheel. Emotes follow the skater’s head for five seconds. You can adjust the cooldown or hide incoming emotes. Custom emotes carry a small ink copy when activated in a session. Animated artwork keeps its timing, and fine marks survive reduction even when they fall between preview pixels.
+- **Build an editable piece in My Artwork & Emotes.** Combine shapes, lettering, freehand strokes and imported art on separate layers. Reorder, group, lock, hide or transform layers. Use snapping and guides to line up a design. Save the project to edit later, export a premade, place it on a wall or open the Public Artworks publication form.
+- **Draw with 59 shapes and 16 inks.** Choose a colour before adding a shape or recolour its layer in **Compose**. Smooth outlines preserve curves, corners and cutouts as you resize or rotate. Older layers can opt in with **Use smooth shape**. **Preview wall detail** shows the ink rendition before you export.
+- **Type in 20 offline fonts.** Try Flow (Pacifico) for handwriting, Script (Lobster) for joined letters or Brush (Sedgwick Ave Display) for a hand-drawn tag. Text stays editable, including line breaks, spacing, alignment and arch. The image preparer can also turn system-font lettering or emoji into an imported piece.
+- **Paint on a separate layer.** Brush, Line, Eraser and Picker work with adjustable width, opacity, stabilisation, symmetry and repeating tiles. Undo and redo work on whole strokes. The Studio saves a recovery draft and keeps the layers when you reopen a saved project.
+
+The local overhead display and Studio wall placement were tested in San Vansterdam. Automated checks covered all 46 premades, each personal artwork source and delivery to a simulated second player. Live emote verification between two signed-in players is still pending.
+
 ## What's new in 0.8.2
 
 - **Wall Paint and Premade Art recognise flat walls by shape.** Both tools use the map’s collision geometry, so map authors can give a wall any name. Aim at a continuous, near-vertical face within 8 m of the camera. The whole brush or piece needs to fit. If a premade preview disappears near a corner, move it inward or reduce its size.
@@ -40,6 +51,9 @@ To check on your setup, try Wall Paint and the same premade on the same wall wit
 
 ## Features
 
+- **Equip artwork as overhead emotes.** Fill eight slots with bundled premades, your imported and reshaped pieces, collection items, Public Artworks downloads, Blackbook drawings or layered Studio projects. Open the wheel with **Ctrl+J** or **Back + X**. You can equip personal art during a session without publishing it.
+- **Make layered graffiti in My Artwork & Emotes.** Combine shapes, editable text, freehand paint and imported images. Group and transform layers, save an editable project, export a wall premade or share a copy through Public Artworks.
+- **Use 59 shapes and 20 lettering fonts.** Choose from 16 shape colours and recolour individual layers. Type multiline text in handwriting, display or pixel fonts and adjust spacing, alignment or arch. Preview the ink detail before placing the design.
 - **Browse 46 premades.** Choose from lettering, skate designs, characters, phrases, stencils and experimental pieces. Filter by category or search by title, lettering or pack number. After you place one, the selector reopens on the same design, search and page.
 - **Place and edit pieces on walls.** Aim at a flat surface to preview size and rotation before placing. In **Artwork Library → Edit placements on this map**, select a saved piece to move, scale, stretch its width, rotate, duplicate, reset or remove it. Each offline placement keeps its own settings and returns when you revisit the map or restart.
 - **Draw and save in Blackbook.** Use Marker, Line, Eraser and Picker on a transparent canvas with 16 inks and adjustable brush widths. Name a drawing, save it to your personal library, reopen it to edit, or place a copy on a wall.
@@ -90,6 +104,7 @@ Press **Ctrl+L**, or choose **Insert → Plugins → Graffiti Lab → Open Graff
 
 | What you want to do | How |
 | --- | --- |
+| Display artwork as an emote | Equip a piece, open the wheel with **Ctrl+J** or **Back + X**, select a slot and press **Enter** or **A**. Clicking an occupied slot displays it immediately. |
 | Place a premade | Select a thumbnail and choose **Place on Wall**. Aim at a flat wall within 8 m. When **Wall ready** appears, left-click, press **Ctrl+P**, or press **A** on a controller. |
 | Resize or rotate a preview | While aiming, press **[** or **]** for size and **Q** or **E** for rotation. |
 | Cancel or remove a placement | Press **Ctrl+R** to cancel a preview. With the menus closed and no preview active, **Ctrl+R** removes your latest mark. |
@@ -100,7 +115,7 @@ Freehand wall paint saves automatically per map, including partial erasures, and
 
 ## Multiplayer
 
-Built-in premade placements support session sharing. Each player needs the same version installed under `Mods/GraffitiLab/` on the same map. Late joiners can receive existing placements while the artist is still in the session. Host-side and simulated two-player checks passed. A visual check with two signed-in players is still pending. Freehand painting, Blackbook artwork and imports are offline features.
+Built-in premade wall placements support session sharing. Each player needs the same version installed under `Mods/GraffitiLab/` on the same map. Late joiners can receive existing placements while the artist is still in the session. Freehand wall painting and placing personal artwork on walls are offline features. Players can use personal artwork as an emote in a session. Graffiti Lab requests the Players permission to follow another skater’s head. Host-side and simulated two-player checks passed. A visual check with two signed-in players is still pending.
 
 ## Source and artwork rights
 

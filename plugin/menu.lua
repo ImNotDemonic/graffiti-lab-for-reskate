@@ -7,6 +7,7 @@ local rows={
     {"Saved Gallery","","",748,60},
     {"Settings","","",812,60},
     {"Public Artworks","","",876,60},
+    {"My Artwork & Emotes","","",936,60},
 }
 local tabs={"Controls","Painting","Performance"}
 local controls={

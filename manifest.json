@@ -1,7 +1,7 @@
 {
   "name": "GraffitiLab",
-  "version_number": "0.8.2",
+  "version_number": "0.9.0",
   "website_url": "https://github.com/ImNotDemonic/graffiti-lab-for-reskate",
-  "description": "Paint walls in ReSkate with 46 premades, a freehand spray can and your own Blackbook designs. Reshape pieces, edit placements, and publish or download community art in Public Artworks.",
+  "description": "Paint walls with 46 premades or your own art. Create layered graffiti with 59 shapes and 20 fonts, share pieces in Public Artworks, and equip any design in an eight-slot overhead emote wheel.",
   "dependencies": []
 }

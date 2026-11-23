@@ -125,6 +125,22 @@ function shape.bounds(s,aspect)
     elseif ratio<1/16 then local pad=((b-t)/(16*aspect)-(r-l))/2 l-=pad r+=pad end
     return {l=l,t=t,w=r-l,h=b-t,aspect=math.clamp(aspect*(r-l)/(b-t),1/16,16)}
 end
+-- Map a fitted preview coordinate back into the source using the reshape editor's geometry.
+function shape.sampler(s,aspect)
+    local box=shape.bounds(s,aspect)
+    local inverse
+    if s.mode=="Corners" then inverse=cornerMap(s.corners)
+    elseif s.mode=="Perspective" then
+        local lt,lb=edges(s,0) local rt,rb=edges(s,1)
+        inverse=cornerMap({0,lt,1,rt,1,rb,0,lb})
+    end
+    return function(u,v)
+        local x,y=box.l+u*box.w,box.t+v*box.h
+        if inverse then return inverse(x,y) end
+        local t,b=edges(s,x)
+        return x,(y-t)/(b-t)
+    end
+end
 function shape.render(source,s,index)
     local g=source.grids[index]
     local box=shape.bounds(s,source.aspect)
